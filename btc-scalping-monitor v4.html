@@ -33,6 +33,12 @@
             --short-glow: rgba(255, 23, 68, 0.4);
             --warn: #ffc107;
             --info: #448aff;
+            --volume-long: rgba(0, 230, 118, 0.3);
+            --volume-short: rgba(255, 23, 68, 0.3);
+            --fib-0: rgba(255, 255, 255, 0.1);
+            --fib-382: rgba(255, 193, 7, 0.15);
+            --fib-618: rgba(0, 230, 118, 0.15);
+            --fib-786: rgba(255, 23, 68, 0.15);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -113,7 +119,7 @@
 
         .header-stats {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             align-items: center;
         }
 
@@ -172,6 +178,8 @@
         }
 
         .badge-live { background: var(--long-dim); color: var(--long); }
+        .badge-warn { background: rgba(255,193,7,0.15); color: var(--warn); }
+        .badge-short { background: var(--short-dim); color: var(--short); }
 
         .signal-card {
             background: var(--bg-2);
@@ -191,6 +199,11 @@
         .signal-card.active-short {
             border-color: var(--short);
             box-shadow: 0 0 15px var(--short-dim);
+        }
+
+        .signal-card.warning {
+            border-color: var(--warn);
+            box-shadow: 0 0 10px rgba(255,193,7,0.15);
         }
 
         .signal-card:hover {
@@ -237,6 +250,13 @@
         .signal-row .value.short { color: var(--short); }
         .signal-row .value.warn { color: var(--warn); }
         .signal-row .value.dim { color: var(--text-2); }
+
+        .warning-text {
+            color: var(--warn);
+            font-size: 9px;
+            margin-top: 4px;
+            font-style: italic;
+        }
 
         .chart-area {
             flex: 1;
@@ -342,8 +362,24 @@
 
         .chart-wrap {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--bg-0);
+            position: relative;
+        }
+
+        .chart-container-main {
+            flex: 1;
             position: relative;
             min-height: 0;
+            cursor: crosshair;
+        }
+
+        .chart-container-volume {
+            height: 100px;
+            position: relative;
+            border-top: 1px solid var(--border);
             background: var(--bg-0);
             cursor: crosshair;
         }
@@ -355,12 +391,15 @@
 
         .chart-hint {
             position: absolute;
-            bottom: 8px;
+            bottom: 108px;
             left: 8px;
             font-size: 8px;
             color: var(--text-3);
             pointer-events: none;
             z-index: 10;
+            background: rgba(6,8,10,0.7);
+            padding: 2px 6px;
+            border-radius: 3px;
         }
 
         .fvg-item {
@@ -440,6 +479,74 @@
         .liq-bar-fill.above { background: linear-gradient(90deg, var(--short), #ff6e40); }
         .liq-bar-fill.below { background: linear-gradient(90deg, var(--long), #69f0ae); }
 
+        .fib-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 9px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .fib-row:last-child { border-bottom: none; }
+        .fib-level { color: var(--text-2); }
+        .fib-price { font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+        .session-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .session-asian { background: #ffd700; box-shadow: 0 0 4px #ffd700; }
+        .session-london { background: #00bcd4; box-shadow: 0 0 4px #00bcd4; }
+        .session-ny { background: #ff5722; box-shadow: 0 0 4px #ff5722; }
+
+        .funding-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .funding-cell {
+            background: var(--bg-2);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .funding-label {
+            font-size: 8px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .funding-value {
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Oxanium', sans-serif;
+        }
+
+        .oi-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-3);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .oi-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--info), var(--accent));
+            transition: width 0.5s;
+        }
+
         .history-item {
             display: grid;
             grid-template-columns: 50px 1fr 60px 50px;
@@ -458,6 +565,10 @@
         .history-item:hover {
             background: var(--bg-3);
             border-color: var(--border-bright);
+        }
+
+        .history-item.warning {
+            border-left: 2px solid var(--warn);
         }
 
         .mtf-row {
@@ -523,6 +634,7 @@
         .toast.short-toast { border-left-color: var(--short); }
         .toast.info-toast { border-left-color: var(--info); }
         .toast.fvg-toast { border-left-color: var(--accent); }
+        .toast.warn-toast { border-left-color: var(--warn); }
 
         @keyframes slide-in {
             from { transform: translateX(100%); opacity: 0; }
@@ -734,6 +846,30 @@
 
         .pnl-positive { color: var(--long); }
         .pnl-negative { color: var(--short); }
+        
+        .volume-label {
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            font-size: 8px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .candle-pattern-tag {
+            display: inline-block;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            margin-right: 4px;
+            font-weight: 600;
+        }
+
+        .pattern-bull { background: rgba(0,230,118,0.2); color: var(--long); border: 1px solid var(--long); }
+        .pattern-bear { background: rgba(255,23,68,0.2); color: var(--short); border: 1px solid var(--short); }
     </style>
 </head>
 <body>
@@ -769,20 +905,20 @@
     </div>
     <div class="header-stats">
         <div class="stat-item">
+            <div class="stat-label">Funding</div>
+            <div class="stat-value" id="headerFunding" style="color:var(--text-2)">--</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Open Interest</div>
+            <div class="stat-value" id="headerOI" style="color:var(--text-2)">--</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Session</div>
+            <div class="stat-value" id="headerSession" style="color:var(--text-2)">--</div>
+        </div>
+        <div class="stat-item">
             <div class="stat-label">HTF Bias</div>
             <div class="stat-value" id="htfBias" style="color:var(--text-2)">--</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">Signale heute</div>
-            <div class="stat-value" id="signalCount">0</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">Win Rate (Live)</div>
-            <div class="stat-value" id="liveWinRate" style="color:var(--accent)">--</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">Wyckoff</div>
-            <div class="stat-value" id="headerWyckoff" style="color:var(--text-2)">--</div>
         </div>
     </div>
 </div>
@@ -796,9 +932,72 @@
         </div>
 
         <div class="panel">
-            <div class="panel-title">Wyckoff Phase</div>
-            <div class="signal-row"><span class="label">Phase</span><span class="value" id="wkPhase">--</span></div>
-            <div class="signal-row"><span class="label">Sub-Phase</span><span class="value" id="wkSubPhase">--</span></div>
+            <div class="panel-title">Market Data <span class="badge badge-live">FUTURES</span></div>
+            <div class="funding-grid">
+                <div class="funding-cell">
+                    <div class="funding-label">Funding Rate</div>
+                    <div class="funding-value" id="fundingRate" style="color:var(--text-2)">--</div>
+                </div>
+                <div class="funding-cell">
+                    <div class="funding-label">Next Funding</div>
+                    <div class="funding-value" id="nextFunding" style="color:var(--text-2);font-size:11px">--</div>
+                </div>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                <div class="signal-row"><span class="label">Open Interest</span><span class="value" id="oiValue">--</span></div>
+                <div class="oi-bar"><div class="oi-fill" id="oiFill" style="width:0%"></div></div>
+                <div class="signal-row" style="margin-top:6px"><span class="label">OI Change 24h</span><span class="value" id="oiChange">--</span></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Session Highlight <span class="badge" id="sessionBadge" style="background:var(--bg-3);color:var(--text-2)">UTC</span></div>
+            <div class="signal-row">
+                <span class="label"><span class="session-indicator session-asian"></span>Asian</span>
+                <span class="value" id="sessionAsian">00:00-09:00 UTC</span>
+            </div>
+            <div class="signal-row">
+                <span class="label"><span class="session-indicator session-london"></span>London</span>
+                <span class="value" id="sessionLondon">09:00-17:00 UTC</span>
+            </div>
+            <div class="signal-row">
+                <span class="label"><span class="session-indicator session-ny"></span>New York</span>
+                <span class="value" id="sessionNY">14:00-22:00 UTC</span>
+            </div>
+            <div class="signal-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+                <span class="label">Aktive Session</span>
+                <span class="value" id="activeSession" style="font-weight:700">--</span>
+            </div>
+            <div class="signal-row">
+                <span class="label">Session High</span>
+                <span class="value" id="sessionHigh">--</span>
+            </div>
+            <div class="signal-row">
+                <span class="label">Session Low</span>
+                <span class="value" id="sessionLow">--</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Fibonacci Retracement <span class="badge badge-live">AUTO</span></div>
+            <div id="fibLevels">
+                <div class="fib-row"><span class="fib-level">0%</span><span class="fib-price" id="fib0">--</span></div>
+                <div class="fib-row"><span class="fib-level" style="color:var(--warn)">38.2%</span><span class="fib-price" id="fib382" style="color:var(--warn)">--</span></div>
+                <div class="fib-row"><span class="fib-level" style="color:var(--text-1)">50%</span><span class="fib-price" id="fib50" style="color:var(--text-1)">--</span></div>
+                <div class="fib-row"><span class="fib-level" style="color:var(--long)">61.8%</span><span class="fib-price" id="fib618" style="color:var(--long)">--</span></div>
+                <div class="fib-row"><span class="fib-level" style="color:var(--short)">78.6%</span><span class="fib-price" id="fib786" style="color:var(--short)">--</span></div>
+                <div class="fib-row"><span class="fib-level">100%</span><span class="fib-price" id="fib100">--</span></div>
+            </div>
+            <div style="margin-top:8px;font-size:8px;color:var(--text-3);text-align:center">
+                Range: <span id="fibRange">--</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Wyckoff Phase <span class="badge badge-live">MTF</span></div>
+            <div class="signal-row"><span class="label">4h Bias</span><span class="value" id="wk4h">--</span></div>
+            <div class="signal-row"><span class="label">15m Entry</span><span class="value" id="wk15m">--</span></div>
+            <div class="signal-row"><span class="label">Konfluenz</span><span class="value" id="wkConf">--</span></div>
             <div class="wyckoff-bar" id="wkBar">
                 <div class="wk-phase" data-p="A"></div>
                 <div class="wk-phase" data-p="B"></div>
@@ -806,29 +1005,11 @@
                 <div class="wk-phase" data-p="D"></div>
                 <div class="wk-phase" data-p="E"></div>
             </div>
-            <div class="signal-row"><span class="label">Spring/Upthrust</span><span class="value" id="wkSpring">--</span></div>
-            <div class="signal-row"><span class="label">Volume Confirm</span><span class="value" id="wkVolConf">--</span></div>
-            <div class="signal-row"><span class="label">Structure</span><span class="value" id="wkStructure">--</span></div>
         </div>
 
         <div class="panel">
             <div class="panel-title">Fair Value Gaps <span class="badge" id="fvgCount" style="background:var(--bg-3);color:var(--text-2)">0</span></div>
             <div id="fvgList"></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Liquiditäts-Cluster</div>
-            <div id="liqList"></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Backtest Performance</div>
-            <div class="bt-grid">
-                <div class="bt-cell"><div class="bt-label">Win Rate</div><div class="bt-value" id="btWinRate" style="color:var(--text-2)">--</div></div>
-                <div class="bt-cell"><div class="bt-label">Profit Factor</div><div class="bt-value" id="btPF" style="color:var(--text-2)">--</div></div>
-                <div class="bt-cell"><div class="bt-label">Avg R:R</div><div class="bt-value" id="btRR" style="color:var(--text-2)">--</div></div>
-                <div class="bt-cell"><div class="bt-label">Max DD</div><div class="bt-value" id="btDD" style="color:var(--text-2)">--</div></div>
-            </div>
         </div>
     </div>
 
@@ -860,7 +1041,13 @@
                         <div class="toggle-chip on" data-overlay="fvg">
                             <div class="toggle-dot" style="background:var(--accent)"></div>FVG
                         </div>
-                        <div class="toggle-chip on" data-overlay="ob">
+                        <div class="toggle-chip on" data-overlay="fib">
+                            <div class="toggle-dot" style="background:#9c27b0"></div>FIB
+                        </div>
+                        <div class="toggle-chip on" data-overlay="session">
+                            <div class="toggle-dot" style="background:var(--info)"></div>SESSION
+                        </div>
+                        <div class="toggle-chip" data-overlay="ob">
                             <div class="toggle-dot" style="background:var(--info)"></div>OB
                         </div>
                         <div class="toggle-chip" data-overlay="mss">
@@ -873,8 +1060,14 @@
                 </div>
             </div>
             <div class="chart-wrap">
-                <canvas id="mainChart"></canvas>
-                <div class="chart-hint">Scroll: Zoom | Drag: Pan | Dbl-Click: Reset</div>
+                <div class="chart-container-main">
+                    <canvas id="mainChart"></canvas>
+                </div>
+                <div class="chart-container-volume">
+                    <div class="volume-label">Volumen</div>
+                    <canvas id="volumeChart"></canvas>
+                </div>
+                <div class="chart-hint">Drag Mitte: Pan | Y-Achse: Preis stretch | X-Achse: Zeit stretch | +/-: Zoom | Dbl-Click: Reset</div>
             </div>
         </div>
     </div>
@@ -894,7 +1087,9 @@
                 <div class="signal-row"><span class="label">TP2</span><span class="value" id="sigTP2">--</span></div>
                 <div class="signal-row"><span class="label">R:R</span><span class="value" id="sigRR">--</span></div>
                 <div class="signal-row"><span class="label">Confluence</span><span class="value" id="sigConf">--</span></div>
+                <div class="signal-row"><span class="label">Pattern</span><span class="value" id="sigPattern">--</span></div>
                 <div class="signal-row"><span class="label">Grund</span><span class="value" id="sigReason">--</span></div>
+                <div id="sigWarning" class="warning-text" style="display:none;"></div>
                 <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:0%"></div></div>
             </div>
         </div>
@@ -903,11 +1098,14 @@
             <div class="panel-title">Confluence Check</div>
             <div class="signal-row"><span class="label">HTF Bias Align</span><span class="value" id="cfHTF">--</span></div>
             <div class="signal-row"><span class="label">FVG Entry</span><span class="value" id="cfFVG">--</span></div>
+            <div class="signal-row"><span class="label">Fib Level</span><span class="value" id="cfFib">--</span></div>
             <div class="signal-row"><span class="label">Order Block</span><span class="value" id="cfOB">--</span></div>
             <div class="signal-row"><span class="label">MSS / BOS</span><span class="value" id="cfMSS">--</span></div>
-            <div class="signal-row"><span class="label">Wyckoff Phase</span><span class="value" id="cfWyckoff">--</span></div>
+            <div class="signal-row"><span class="label">Candle Pattern</span><span class="value" id="cfPattern">--</span></div>
+            <div class="signal-row"><span class="label">Wyckoff MTF</span><span class="value" id="cfWyckoff">--</span></div>
             <div class="signal-row"><span class="label">Liq Sweep</span><span class="value" id="cfLiq">--</span></div>
             <div class="signal-row"><span class="label">Volume Confirm</span><span class="value" id="cfVol">--</span></div>
+            <div class="signal-row"><span class="label">Trend Align</span><span class="value" id="cfTrend">--</span></div>
         </div>
 
         <div class="panel">
@@ -920,11 +1118,31 @@
         </div>
 
         <div class="panel">
+            <div class="panel-title">Liquiditäts-Cluster</div>
+            <div id="liqList"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Candle Patterns <span class="badge badge-live">LIVE</span></div>
+            <div id="patternList" style="font-size:9px;color:var(--text-2)">Warte auf Daten...</div>
+        </div>
+
+        <div class="panel">
             <div class="panel-title">Signal-Historie <span class="badge" id="histBadge" style="background:var(--bg-3);color:var(--text-2)">0</span></div>
-            <div id="signalHistory" style="max-height: 300px; overflow-y: auto;">
+            <div id="signalHistory" style="max-height: 200px; overflow-y: auto;">
                 <div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">Noch keine Signale</div>
             </div>
             <button class="load-more-btn" id="loadMoreBtn" style="display:none;" onclick="loadMoreHistory()">Mehr laden</button>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Session Stats <span class="badge badge-live">LIVE</span></div>
+            <div class="bt-grid">
+                <div class="bt-cell"><div class="bt-label">Signale</div><div class="bt-value" id="btWinRate" style="color:var(--text-2)">0</div></div>
+                <div class="bt-cell"><div class="bt-label">Win Rate</div><div class="bt-value" id="btPF" style="color:var(--text-2)">--</div></div>
+                <div class="bt-cell"><div class="bt-label">Ø R gewonnen</div><div class="bt-value" id="btRR" style="color:var(--text-2)">--</div></div>
+                <div class="bt-cell"><div class="bt-label">Total R</div><div class="bt-value" id="btDD" style="color:var(--text-2)">--</div></div>
+            </div>
         </div>
     </div>
 </div>
@@ -939,11 +1157,11 @@ const STATE = {
     ws: null,
     wsReconnectTimer: null,
     chart: null,
+    volumeChart: null,
     currentTF: '4h',
     chartType: 'candles',
 
-    // Overlay toggles
-    overlays: { ema: true, fvg: true, ob: true, mss: false, liq: false },
+    overlays: { ema: true, fvg: true, fib: true, session: true, ob: false, mss: false, liq: false },
 
     tfData: {},
     tfBias: {},
@@ -955,22 +1173,38 @@ const STATE = {
     mssEvents: [],
     bosEvents: [],
     currentTrend: 'neutral',
-    wyckoff: { phase: 'none', subPhase: '', confidence: 0 },
+    
+    wyckoff: { 
+        htf: { phase: 'none', subPhase: '', confidence: 0 },
+        ltf: { phase: 'none', subPhase: '', confidence: 0 },
+        combined: 'neutral'
+    },
+
+    fibLevels: { high: 0, low: 0, levels: {} },
+    currentSession: { name: 'none', start: 0, end: 0, high: 0, low: 0 },
+    
+    funding: { rate: 0, nextFunding: 0, countdown: '' },
+    openInterest: { value: 0, change24h: 0, max24h: 0 },
 
     activeSignal: null,
     signalHistory: [],
     signalCooldown: 0,
-    COOLDOWN_MS: 15 * 60 * 1000, // 15 Minuten Cooldown
+    COOLDOWN_MS: 15 * 60 * 1000,
     signalCount: 0,
-    btResults: null,
+    currentPattern: null,
     
-    // Pagination für Signal-Historie
     historyPage: 0,
     historyPerPage: 10,
+    isSyncing: false,
+};
+
+const FVG_THRESHOLDS = {
+    '1m': 0.001, '3m': 0.0015, '5m': 0.002, '15m': 0.003,
+    '30m': 0.004, '1h': 0.005, '2h': 0.006, '4h': 0.008
 };
 
 // ============================================================
-// DATA
+// DATA FETCHING
 // ============================================================
 async function fetchCandles(interval, limit = 500) {
     try {
@@ -982,15 +1216,69 @@ async function fetchCandles(interval, limit = 500) {
     } catch (e) { console.error(`Fetch ${interval}:`, e); return null; }
 }
 
+async function fetchFundingData() {
+    try {
+        // Funding Rate
+        const fundRes = await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
+        if (fundRes.ok) {
+            const fundData = await fundRes.json();
+            if (fundData.length > 0) {
+                STATE.funding.rate = parseFloat(fundData[0].fundingRate);
+                STATE.funding.nextFunding = fundData[0].fundingTime;
+            }
+        }
+        
+        // Open Interest
+        const oiRes = await fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
+        if (oiRes.ok) {
+            const oiData = await oiRes.json();
+            STATE.openInterest.value = parseFloat(oiData.openInterest);
+        }
+        
+        // 24h Change for OI (approximation via 24h ticker)
+        const tickerRes = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT');
+        if (tickerRes.ok) {
+            const ticker = await tickerRes.json();
+            // OI Change ist nicht direkt im Ticker, wir nutzen Volume als Proxy oder speichern einfach aktuellen Wert
+            // Alternativ: Vergleich mit gespeichertem Wert von vor 24h (hier vereinfacht)
+            STATE.openInterest.change24h = 0; // Placeholder, da API limitiert
+        }
+        
+        updateFundingUI();
+    } catch (e) { console.error('Funding fetch error:', e); }
+}
+
+function updateFundingUI() {
+    const rate = STATE.funding.rate;
+    const ratePercent = (rate * 100).toFixed(4);
+    const isPositive = rate >= 0;
+    
+    document.getElementById('fundingRate').textContent = (isPositive ? '+' : '') + ratePercent + '%';
+    document.getElementById('fundingRate').style.color = isPositive ? 'var(--short)' : 'var(--long)'; // Positive = Longs zahlen Shorts = Bearish
+    
+    document.getElementById('headerFunding').textContent = (isPositive ? '+' : '') + ratePercent + '%';
+    document.getElementById('headerFunding').style.color = isPositive ? 'var(--short)' : 'var(--long)';
+    
+    // Next Funding Countdown
+    const nextTime = STATE.funding.nextFunding;
+    if (nextTime) {
+        const diff = nextTime - Date.now();
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        document.getElementById('nextFunding').textContent = `${hours}h ${minutes}m`;
+        document.getElementById('headerOI').textContent = (STATE.openInterest.value / 1000000).toFixed(2) + 'M';
+    }
+    
+    // OI Display
+    const oiM = (STATE.openInterest.value / 1000000000).toFixed(2);
+    document.getElementById('oiValue').textContent = oiM + ' B';
+    document.getElementById('oiFill').style.width = '50%'; // Placeholder für Visual
+}
+
 async function loadAllTimeframes() {
-    const tfs = ['5m', '15m', '30m', '1h', '2h', '4h'];
+    const tfs = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h'];
     const results = await Promise.all(tfs.map(tf => fetchCandles(tf, 500)));
     tfs.forEach((tf, i) => { if (results[i]) STATE.tfData[tf] = results[i]; });
-
-    if (!STATE.tfData[STATE.currentTF]) {
-        const d = await fetchCandles(STATE.currentTF, 500);
-        if (d) STATE.tfData[STATE.currentTF] = d;
-    }
 
     const ref = STATE.tfData['4h'] || STATE.tfData['1h'] || STATE.tfData['5m'];
     if (ref && ref.length) STATE.price = ref[ref.length - 1].c;
@@ -998,6 +1286,158 @@ async function loadAllTimeframes() {
     if (STATE.tfData['1h'] && STATE.tfData['1h'].length >= 24) {
         STATE.openPrice24h = STATE.tfData['1h'][STATE.tfData['1h'].length - 24].o;
     }
+}
+
+// ============================================================
+// SESSION HANDLING
+// ============================================================
+function detectSession() {
+    const now = new Date();
+    const utcHours = now.getUTCHours();
+    const utcMinutes = now.getUTCMinutes();
+    const totalMinutes = utcHours * 60 + utcMinutes;
+    
+    // Sessions in UTC Minutes: Asian 00:00-09:00, London 09:00-17:00, NY 14:00-22:00
+    // NY Overlap mit London: 14:00-17:00
+    
+    let sessionName = 'none';
+    let sessionColor = '';
+    let startMin = 0, endMin = 0;
+    
+    if (totalMinutes >= 0 && totalMinutes < 540) { // 00:00 - 09:00
+        sessionName = 'Asian';
+        sessionColor = '#ffd700';
+        startMin = 0;
+        endMin = 540;
+    } else if (totalMinutes >= 540 && totalMinutes < 1020) { // 09:00 - 17:00
+        sessionName = 'London';
+        sessionColor = '#00bcd4';
+        startMin = 540;
+        endMin = 1020;
+        if (totalMinutes >= 840) { // 14:00+ = NY Overlap
+            sessionName = 'London/NY';
+            sessionColor = '#ff5722';
+        }
+    } else if (totalMinutes >= 840 && totalMinutes < 1320) { // 14:00 - 22:00
+        sessionName = 'New York';
+        sessionColor = '#ff5722';
+        startMin = 840;
+        endMin = 1320;
+    } else {
+        sessionName = 'Closed';
+        sessionColor = '#444e5f';
+        startMin = 1320;
+        endMin = 1440;
+    }
+    
+    STATE.currentSession = {
+        name: sessionName,
+        color: sessionColor,
+        start: startMin,
+        end: endMin,
+        utcHours: utcHours
+    };
+    
+    // Berechne Session High/Low basierend auf aktuellem TF
+    calculateSessionRange();
+    updateSessionUI();
+}
+
+function calculateSessionRange() {
+    const candles = STATE.tfData[STATE.currentTF];
+    if (!candles || !candles.length) return;
+    
+    const now = Date.now();
+    const sessionStart = new Date();
+    sessionStart.setUTCHours(Math.floor(STATE.currentSession.start / 60), 0, 0, 0);
+    
+    const relevantCandles = candles.filter(c => c.t >= sessionStart.getTime() && c.t <= now);
+    if (relevantCandles.length) {
+        STATE.currentSession.high = Math.max(...relevantCandles.map(c => c.h));
+        STATE.currentSession.low = Math.min(...relevantCandles.map(c => c.l));
+    }
+}
+
+function updateSessionUI() {
+    const s = STATE.currentSession;
+    document.getElementById('activeSession').textContent = s.name;
+    document.getElementById('activeSession').style.color = s.color;
+    document.getElementById('headerSession').textContent = s.name;
+    document.getElementById('headerSession').style.color = s.color;
+    
+    if (s.high && s.low) {
+        document.getElementById('sessionHigh').textContent = '$' + s.high.toFixed(0);
+        document.getElementById('sessionHigh').style.color = 'var(--short)';
+        document.getElementById('sessionLow').textContent = '$' + s.low.toFixed(0);
+        document.getElementById('sessionLow').style.color = 'var(--long)';
+    }
+}
+
+// ============================================================
+// FIBONACCI RETRACEMENT
+// ============================================================
+function calculateFibonacci() {
+    const candles = STATE.tfData[STATE.currentTF];
+    if (!candles || candles.length < 20) return;
+    
+    // Finde letztes Swing High/Low basierend auf den letzten 50 Candles
+    const lookback = Math.min(50, candles.length);
+    const recent = candles.slice(-lookback);
+    
+    let swingHigh = { price: 0, time: 0 };
+    let swingLow = { price: Infinity, time: 0 };
+    
+    recent.forEach((c, i) => {
+        if (c.h > swingHigh.price) swingHigh = { price: c.h, time: c.t, index: i };
+        if (c.l < swingLow.price) swingLow = { price: c.l, time: c.t, index: i };
+    });
+    
+    // Bestimme Trend-Richtung: Wenn High neuer als Low = Downtrend (Retracement von High)
+    // Wenn Low neuer als High = Uptrend (Retracement von Low)
+    const isUptrend = swingLow.time > swingHigh.time;
+    
+    let startPrice, endPrice;
+    if (isUptrend) {
+        startPrice = swingLow.price;
+        endPrice = recent[recent.length-1].h; // Aktuelles High als Ziel
+    } else {
+        startPrice = swingHigh.price;
+        endPrice = recent[recent.length-1].l; // Aktuelles Low als Ziel
+    }
+    
+    const range = Math.abs(startPrice - endPrice);
+    const levels = {
+        0: startPrice,
+        382: isUptrend ? startPrice + (range * 0.382) : startPrice - (range * 0.382),
+        50: isUptrend ? startPrice + (range * 0.5) : startPrice - (range * 0.5),
+        618: isUptrend ? startPrice + (range * 0.618) : startPrice - (range * 0.618),
+        786: isUptrend ? startPrice + (range * 0.786) : startPrice - (range * 0.786),
+        100: endPrice
+    };
+    
+    STATE.fibLevels = {
+        high: Math.max(startPrice, endPrice),
+        low: Math.min(startPrice, endPrice),
+        isUptrend,
+        levels,
+        swingHigh,
+        swingLow
+    };
+    
+    updateFibUI();
+}
+
+function updateFibUI() {
+    const fib = STATE.fibLevels;
+    document.getElementById('fib0').textContent = '$' + fib.levels[0].toFixed(0);
+    document.getElementById('fib382').textContent = '$' + fib.levels[382].toFixed(0);
+    document.getElementById('fib50').textContent = '$' + fib.levels[50].toFixed(0);
+    document.getElementById('fib618').textContent = '$' + fib.levels[618].toFixed(0);
+    document.getElementById('fib786').textContent = '$' + fib.levels[786].toFixed(0);
+    document.getElementById('fib100').textContent = '$' + fib.levels[100].toFixed(0);
+    
+    const range = Math.abs(fib.high - fib.low);
+    document.getElementById('fibRange').textContent = '$' + range.toFixed(0) + ' (' + ((range/fib.low)*100).toFixed(1) + '%)';
 }
 
 // ============================================================
@@ -1019,6 +1459,78 @@ function calcATR(candles, period = 14) {
         atr.push(i < period ? tr : (atr[i-1] * (period - 1) + tr) / period);
     }
     return atr;
+}
+
+// ============================================================
+// CANDLE PATTERNS
+// ============================================================
+function detectCandlePatterns(candles) {
+    if (candles.length < 5) return null;
+    const i = candles.length - 1;
+    const curr = candles[i];
+    const prev = candles[i-1];
+    const prev2 = candles[i-2];
+    
+    const body = Math.abs(curr.c - curr.o);
+    const range = curr.h - curr.l;
+    const upperWick = curr.h - Math.max(curr.c, curr.o);
+    const lowerWick = Math.min(curr.c, curr.o) - curr.l;
+    
+    const isBull = curr.c > curr.o;
+    const isBear = curr.c < curr.o;
+    const prevIsBull = prev.c > prev.o;
+    const prevIsBear = prev.c < prev.o;
+    
+    let patterns = [];
+    
+    if (isBull && prevIsBear && curr.o < prev.c && curr.c > prev.o) {
+        patterns.push({ name: 'Bull Engulfing', type: 'bull', strength: 2 });
+    } else if (isBear && prevIsBull && curr.o > prev.c && curr.c < prev.o) {
+        patterns.push({ name: 'Bear Engulfing', type: 'bear', strength: 2 });
+    }
+    
+    if (isBull && lowerWick > body * 2 && upperWick < body * 0.5 && range > body * 2) {
+        patterns.push({ name: 'Hammer', type: 'bull', strength: 1.5 });
+    }
+    
+    if (isBear && upperWick > body * 2 && lowerWick < body * 0.5 && range > body * 2) {
+        patterns.push({ name: 'Shooting Star', type: 'bear', strength: 1.5 });
+    }
+    
+    if (lowerWick > body * 2.5 && upperWick < body * 0.3) {
+        patterns.push({ name: 'Pin Bar', type: 'bull', strength: 1.5 });
+    } else if (upperWick > body * 2.5 && lowerWick < body * 0.3) {
+        patterns.push({ name: 'Pin Bar', type: 'bear', strength: 1.5 });
+    }
+    
+    if (body < range * 0.05 && range > 0) {
+        patterns.push({ name: 'Doji', type: 'neutral', strength: 0.5 });
+    }
+    
+    if (prev2 && prev && candles[i-2].c < candles[i-2].o && 
+        Math.abs(prev.c - prev.o) < (prev.h - prev.l) * 0.3 && 
+        curr.c > curr.o && curr.c > (prev2.o + prev2.c) / 2) {
+        patterns.push({ name: 'Morning Star', type: 'bull', strength: 2.5 });
+    }
+    
+    if (prev2 && prev && candles[i-2].c > candles[i-2].o && 
+        Math.abs(prev.c - prev.o) < (prev.h - prev.l) * 0.3 && 
+        curr.c < curr.o && curr.c < (prev2.o + prev2.c) / 2) {
+        patterns.push({ name: 'Evening Star', type: 'bear', strength: 2.5 });
+    }
+    
+    return patterns.length > 0 ? patterns : null;
+}
+
+function renderPatterns(patterns) {
+    const el = document.getElementById('patternList');
+    if (!patterns) {
+        el.innerHTML = '<span style="color:var(--text-3)">Keine Patterns erkannt</span>';
+        return;
+    }
+    el.innerHTML = patterns.map(p => 
+        `<span class="candle-pattern-tag pattern-${p.type}">${p.name} (${p.strength})</span>`
+    ).join('');
 }
 
 // ============================================================
@@ -1132,16 +1644,25 @@ function detectMSSandBOS(candles) {
 }
 
 // ============================================================
-// FVG - Verbessert: Signifikantere Gaps (>1%)
+// FVG
 // ============================================================
 function detectFVGs(candles) {
+    const threshold = FVG_THRESHOLDS[STATE.currentTF] || 0.005;
     const fvgs = [];
+    
     for (let i = 2; i < candles.length; i++) {
         const p = candles[i-2], c = candles[i];
-        // Erhöhter Threshold auf 1% für signifikantere FVGs
-        if (c.l > p.h && (c.l - p.h) / p.h >= 0.01) fvgs.push({ type: 'bullish', top: c.l, bottom: p.h, idx: i, time: c.t, status: 'open', filled: 0 });
-        if (c.h < p.l && (p.l - c.h) / p.l >= 0.01) fvgs.push({ type: 'bearish', top: p.l, bottom: c.h, idx: i, time: c.t, status: 'open', filled: 0 });
+        const bullishGap = (c.l - p.h) / p.h;
+        const bearishGap = (p.l - c.h) / p.l;
+        
+        if (c.l > p.h && bullishGap >= threshold) {
+            fvgs.push({ type: 'bullish', top: c.l, bottom: p.h, idx: i, time: c.t, status: 'open', filled: 0, size: bullishGap });
+        }
+        if (c.h < p.l && bearishGap >= threshold) {
+            fvgs.push({ type: 'bearish', top: p.l, bottom: c.h, idx: i, time: c.t, status: 'open', filled: 0, size: bearishGap });
+        }
     }
+    
     fvgs.forEach(f => {
         for (let i = f.idx + 1; i < candles.length; i++) {
             const c = candles[i];
@@ -1155,22 +1676,34 @@ function detectFVGs(candles) {
         }
         if (f.filled >= 0.7 && f.status !== 'filled') f.status = 'partial';
     });
+    
     STATE.fvgs = fvgs.filter(f => f.status !== 'filled');
 }
 
 function renderFVGList() {
     const el = document.getElementById('fvgList');
+    const threshold = FVG_THRESHOLDS[STATE.currentTF] || 0.005;
     const open = STATE.fvgs.filter(f => f.status !== 'filled').slice(-8);
     document.getElementById('fvgCount').textContent = open.length;
-    if (!open.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine offenen FVGs</div>'; return; }
+    
+    if (!open.length) { 
+        el.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine FVGs >${(threshold*100).toFixed(1)}%</div>`; 
+        return; 
+    }
+    
     el.innerHTML = open.map(f => {
         const dist = f.type === 'bullish' ? ((STATE.price - f.top) / STATE.price * 100).toFixed(2) : ((f.bottom - STATE.price) / STATE.price * 100).toFixed(2);
-        return `<div class="fvg-item ${f.type === 'bullish' ? 'bull' : 'bear'}"><span>$${f.bottom.toFixed(0)} – $${f.top.toFixed(0)}</span><span style="color:var(--text-2)">${dist}%</span><span class="fvg-tag ${f.status === 'open' ? 'tag-open' : 'tag-partial'}">${f.status.toUpperCase()}</span></div>`;
+        return `<div class="fvg-item ${f.type === 'bullish' ? 'bull' : 'bear'}">
+            <span>$${f.bottom.toFixed(0)} – $${f.top.toFixed(0)}</span>
+            <span style="color:var(--text-2);font-size:8px">${(f.size*100).toFixed(1)}%</span>
+            <span style="color:var(--text-2);font-size:9px">${dist}%</span>
+            <span class="fvg-tag ${f.status === 'open' ? 'tag-open' : 'tag-partial'}">${f.status.toUpperCase()}</span>
+        </div>`;
     }).join('');
 }
 
 // ============================================================
-// ORDER BLOCKS
+// ORDER BLOCKS & LIQ
 // ============================================================
 function detectOrderBlocks(candles) {
     STATE.orderBlocks = [];
@@ -1190,9 +1723,6 @@ function detectOrderBlocks(candles) {
     STATE.orderBlocks = STATE.orderBlocks.filter(ob => !ob.mitigated).slice(-10);
 }
 
-// ============================================================
-// LIQUIDITY
-// ============================================================
 function detectLiquidityLevels() {
     STATE.liquidityLevels = [];
     const highs = STATE.swingPoints.filter(s => s.type === 'high').map(s => s.price);
@@ -1230,15 +1760,75 @@ function renderLiquidity() {
 }
 
 // ============================================================
-// WYCKOFF
+// WYCKOFF MTF
 // ============================================================
-function analyzeWyckoff() {
-    const data = STATE.tfData['1h'] || STATE.tfData['30m'];
-    if (!data || data.length < 60) { STATE.wyckoff = { phase: 'none', subPhase: '', confidence: 0 }; return; }
+function analyzeWyckoffMTF() {
+    const data4h = STATE.tfData['4h'];
+    if (data4h && data4h.length >= 60) {
+        STATE.wyckoff.htf = analyzeSingleWyckoff(data4h, '4h');
+    }
+    
+    const data15m = STATE.tfData['15m'];
+    if (data15m && data15m.length >= 60) {
+        STATE.wyckoff.ltf = analyzeSingleWyckoff(data15m, '15m');
+    } else if (STATE.tfData['30m']) {
+        STATE.wyckoff.ltf = analyzeSingleWyckoff(STATE.tfData['30m'], '30m');
+    }
+    
+    const htf = STATE.wyckoff.htf;
+    const ltf = STATE.wyckoff.ltf;
+    
+    let combined = 'neutral';
+    if (htf.phase === 'accumulation' && (ltf.phase === 'accumulation' || ltf.phase === 'neutral')) {
+        combined = 'strong_bull';
+    } else if (htf.phase === 'distribution' && (ltf.phase === 'distribution' || ltf.phase === 'neutral')) {
+        combined = 'strong_bear';
+    } else if (htf.phase === 'accumulation' && ltf.phase === 'distribution') {
+        combined = 'conflict';
+    } else if (htf.phase === 'distribution' && ltf.phase === 'accumulation') {
+        combined = 'conflict';
+    }
+    
+    STATE.wyckoff.combined = combined;
+    
+    const wk4h = document.getElementById('wk4h');
+    const wk15m = document.getElementById('wk15m');
+    const wkConf = document.getElementById('wkConf');
+    
+    wk4h.textContent = htf.subPhase || htf.phase;
+    wk4h.style.color = htf.phase === 'accumulation' ? 'var(--long)' : htf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)';
+    
+    wk15m.textContent = ltf.subPhase || ltf.phase;
+    wk15m.style.color = ltf.phase === 'accumulation' ? 'var(--long)' : ltf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)';
+    
+    if (combined === 'strong_bull') {
+        wkConf.textContent = '✓ BULL ALIGN';
+        wkConf.style.color = 'var(--long)';
+    } else if (combined === 'strong_bear') {
+        wkConf.textContent = '✓ BEAR ALIGN';
+        wkConf.style.color = 'var(--short)';
+    } else if (combined === 'conflict') {
+        wkConf.textContent = '⚠ CONFLICT';
+        wkConf.style.color = 'var(--warn)';
+    } else {
+        wkConf.textContent = 'NEUTRAL';
+        wkConf.style.color = 'var(--text-2)';
+    }
+    
+    const pm = { 'Range':'B','Spring':'C','Test':'C','SOS':'D','Upthrust':'C','LPSY':'C','SOW':'D' };
+    const ap = pm[htf.subPhase] || 'A';
+    document.querySelectorAll('#wkBar .wk-phase').forEach(e => { 
+        e.classList.remove('active','current'); 
+        if (htf.phase !== 'none' && e.dataset.p <= ap) e.classList.add('active'); 
+        if (htf.phase !== 'none' && e.dataset.p === ap) e.classList.add('current'); 
+    });
+}
+
+function analyzeSingleWyckoff(data, tf) {
     const rec = data.slice(-80);
     const highs = rec.map(d => d.h), lows = rec.map(d => d.l), closes = rec.map(d => d.c), vols = rec.map(d => d.v);
     const maxH = Math.max(...highs), minL = Math.min(...lows), range = maxH - minL;
-    if (range === 0) return;
+    if (range === 0) return { phase: 'none', subPhase: '', confidence: 0 };
     const last = closes[closes.length-1], pos = (last - minL) / range;
     const avgV = vols.reduce((a,b)=>a+b,0)/vols.length, recV = vols.slice(-5).reduce((a,b)=>a+b,0)/5, vr = recV/avgV;
     const isRange = range / minL < 0.08;
@@ -1256,55 +1846,62 @@ function analyzeWyckoff() {
         else if (pos < 0.4) { phase = 'accumulation'; sub = 'Range'; conf = 30; }
         else if (pos > 0.6) { phase = 'distribution'; sub = 'Range'; conf = 30; }
     }
-    STATE.wyckoff = { phase, subPhase: sub, confidence: conf, posInRange: pos, volRatio: vr };
-
-    const wkP = document.getElementById('wkPhase'), wkS = document.getElementById('wkSubPhase'), hdr = document.getElementById('headerWyckoff');
-    if (phase === 'accumulation') { wkP.textContent = 'Akkumulation'; wkP.style.color = 'var(--long)'; hdr.textContent = 'AKK '+sub; hdr.style.color = 'var(--long)'; }
-    else if (phase === 'distribution') { wkP.textContent = 'Distribution'; wkP.style.color = 'var(--short)'; hdr.textContent = 'DIST '+sub; hdr.style.color = 'var(--short)'; }
-    else { wkP.textContent = 'Neutral'; wkP.style.color = 'var(--text-2)'; hdr.textContent = '--'; hdr.style.color = 'var(--text-2)'; }
-    wkS.textContent = sub || '--'; wkS.style.color = sub ? (phase === 'accumulation' ? 'var(--long)' : 'var(--short)') : 'var(--text-2)';
-    const pm = { 'Range':'B','Spring':'C','Test':'C','SOS':'D','Upthrust':'C','LPSY':'C','SOW':'D' };
-    const ap = pm[sub] || 'A';
-    document.querySelectorAll('#wkBar .wk-phase').forEach(e => { e.classList.remove('active','current'); if (phase !== 'none' && e.dataset.p <= ap) e.classList.add('active'); if (phase !== 'none' && e.dataset.p === ap) e.classList.add('current'); });
-    document.getElementById('wkSpring').textContent = (sub === 'Spring' || sub === 'Upthrust') ? '✓ '+sub : '--';
-    document.getElementById('wkSpring').style.color = (sub === 'Spring' || sub === 'Upthrust') ? 'var(--long)' : 'var(--text-3)';
-    document.getElementById('wkVolConf').textContent = vr > 1.2 ? `✓ ${vr.toFixed(1)}x` : `${vr.toFixed(1)}x`;
-    document.getElementById('wkVolConf').style.color = vr > 1.2 ? 'var(--long)' : 'var(--text-3)';
-    document.getElementById('wkStructure').textContent = isRange ? 'Range-bound' : 'Trending';
-    document.getElementById('wkStructure').style.color = isRange ? 'var(--warn)' : 'var(--text-2)';
+    return { phase, subPhase: sub, confidence: conf, posInRange: pos, volRatio: vr };
 }
 
 // ============================================================
-// SIGNAL GENERATION - Verbessert: Höhere Qualität, weniger Signale
+// SIGNAL GENERATION
 // ============================================================
 function generateSignals() {
     const candles = STATE.tfData[STATE.currentTF];
     if (!candles || candles.length < 50) return;
     if (Date.now() < STATE.signalCooldown) { updateCooldownBar(); return; }
 
-    const price = STATE.price, atr = calcATR(candles, 14), atrVal = atr[atr.length-1];
-    let ls = 0, ss = 0, reasons = { long: [], short: [] };
-
-    // 1. HTF Bias (2pts) - MUSS klar sein, nicht neutral
+    const price = STATE.price;
+    const atr = calcATR(candles, 14);
+    const atrVal = atr[atr.length-1];
+    
+    let ls = 0, ss = 0;
+    let reasons = { long: [], short: [] };
+    let warnings = { long: [], short: [] };
+    
+    // 1. HTF Bias
     if (STATE.htfBias === 'BULLISH') { ls += 2; reasons.long.push('HTF Bullish'); }
     else if (STATE.htfBias === 'BEARISH') { ss += 2; reasons.short.push('HTF Bearish'); }
     else {
-        // Keine Signale bei neutralem HTF Bias
         renderNoSignal(0);
         return;
     }
     document.getElementById('cfHTF').textContent = STATE.htfBias;
     document.getElementById('cfHTF').style.color = STATE.htfBias === 'BULLISH' ? 'var(--long)' : 'var(--short)';
 
-    // 2. FVG (2pts) - Nur signifikante FVGs
+    // 2. FVG
     const nbf = STATE.fvgs.find(f => f.type === 'bullish' && f.status === 'open' && price >= f.bottom && price <= f.top * 1.005);
     const nbr = STATE.fvgs.find(f => f.type === 'bearish' && f.status === 'open' && price <= f.top && price >= f.bottom * 0.995);
-    if (nbf) { ls += 2; reasons.long.push('In Bull FVG'); }
-    if (nbr) { ss += 2; reasons.short.push('In Bear FVG'); }
-    document.getElementById('cfFVG').textContent = nbf ? '✓ BULL' : nbr ? '✓ BEAR' : '--';
+    if (nbf) { ls += 2; reasons.long.push(`FVG ${(nbf.size*100).toFixed(1)}%`); }
+    if (nbr) { ss += 2; reasons.short.push(`FVG ${(nbr.size*100).toFixed(1)}%`); }
+    document.getElementById('cfFVG').textContent = nbf ? `✓ ${(nbf.size*100).toFixed(1)}%` : nbr ? `✓ ${(nbr.size*100).toFixed(1)}%` : '--';
     document.getElementById('cfFVG').style.color = nbf ? 'var(--long)' : nbr ? 'var(--short)' : 'var(--text-3)';
 
-    // 3. OB (1.5pts)
+    // 3. Fibonacci Level Check
+    const fib = STATE.fibLevels;
+    let nearFib = false;
+    let fibLevel = '';
+    
+    if (fib.levels[618]) {
+        const dist618 = Math.abs(price - fib.levels[618]) / price;
+        const dist382 = Math.abs(price - fib.levels[382]) / price;
+        const dist50 = Math.abs(price - fib.levels[50]) / price;
+        
+        if (dist618 < 0.002) { nearFib = true; fibLevel = '61.8%'; if (fib.isUptrend) { ls += 1.5; reasons.long.push('Fib 61.8%'); } else { ss += 1.5; reasons.short.push('Fib 61.8%'); }}
+        else if (dist382 < 0.002) { nearFib = true; fibLevel = '38.2%'; if (!fib.isUptrend) { ls += 1; reasons.long.push('Fib 38.2%'); } else { ss += 1; reasons.short.push('Fib 38.2%'); }}
+        else if (dist50 < 0.002) { nearFib = true; fibLevel = '50%'; ls += 0.5; ss += 0.5; }
+    }
+    
+    document.getElementById('cfFib').textContent = nearFib ? `✓ ${fibLevel}` : '—';
+    document.getElementById('cfFib').style.color = nearFib ? 'var(--accent)' : 'var(--text-3)';
+
+    // 4. OB
     const nbo = STATE.orderBlocks.find(ob => ob.type === 'bullish' && price >= ob.low && price <= ob.high * 1.002);
     const nso = STATE.orderBlocks.find(ob => ob.type === 'bearish' && price <= ob.high && price >= ob.low * 0.998);
     if (nbo) { ls += 1.5; reasons.long.push('Bull OB'); }
@@ -1312,63 +1909,118 @@ function generateSignals() {
     document.getElementById('cfOB').textContent = nbo ? '✓ BULL' : nso ? '✓ BEAR' : '--';
     document.getElementById('cfOB').style.color = nbo ? 'var(--long)' : nso ? 'var(--short)' : 'var(--text-3)';
 
-    // 4. MSS/BOS (2pts) - Nur frische MSS (letzte 20 Candles)
+    // 5. MSS/BOS
     const rm = STATE.mssEvents.filter(m => candles.length - m.index < 20);
     const lm = rm[rm.length-1];
     if (lm) {
         if (lm.type === 'MSS_BULL') { ls += 2; reasons.long.push('MSS Bullish'); }
         if (lm.type === 'MSS_BEAR') { ss += 2; reasons.short.push('MSS Bearish'); }
     }
-    
-    // Trend-Konsistenz: Keine Longs in bearish Trend, keine Shorts in bullish Trend
-    if (STATE.currentTrend === 'bullish' && ls < ss) { renderNoSignal(ss); return; }
-    if (STATE.currentTrend === 'bearish' && ss < ls) { renderNoSignal(ls); return; }
-    
-    const tb = STATE.currentTrend === 'bullish' ? 0.5 : STATE.currentTrend === 'bearish' ? -0.5 : 0;
-    ls += Math.max(0, tb); ss += Math.max(0, -tb);
     document.getElementById('cfMSS').textContent = lm ? lm.type.replace('_',' ') : STATE.currentTrend.toUpperCase();
     document.getElementById('cfMSS').style.color = (lm && lm.type.includes('BULL')) || STATE.currentTrend === 'bullish' ? 'var(--long)' : (lm && lm.type.includes('BEAR')) || STATE.currentTrend === 'bearish' ? 'var(--short)' : 'var(--text-3)';
 
-    // 5. Wyckoff (2pts) - Nur starke Phasen
-    const wk = STATE.wyckoff;
-    if (wk.phase === 'accumulation' && ['Spring','Test','SOS'].includes(wk.subPhase) && wk.confidence > 50) { ls += 2; reasons.long.push('WK '+wk.subPhase); }
-    if (wk.phase === 'distribution' && ['Upthrust','LPSY','SOW'].includes(wk.subPhase) && wk.confidence > 50) { ss += 2; reasons.short.push('WK '+wk.subPhase); }
-    document.getElementById('cfWyckoff').textContent = wk.subPhase || '--';
-    document.getElementById('cfWyckoff').style.color = wk.phase === 'accumulation' ? 'var(--long)' : wk.phase === 'distribution' ? 'var(--short)' : 'var(--text-3)';
+    // 6. CANDLE PATTERNS
+    const patterns = detectCandlePatterns(candles);
+    STATE.currentPattern = patterns;
+    renderPatterns(patterns);
+    
+    let patternScore = 0;
+    if (patterns) {
+        patterns.forEach(p => {
+            if (p.type === 'bull') { ls += p.strength; patternScore += p.strength; reasons.long.push(p.name); }
+            else if (p.type === 'bear') { ss += p.strength; patternScore += p.strength; reasons.short.push(p.name); }
+        });
+    }
+    document.getElementById('cfPattern').textContent = patterns ? patterns.map(p => p.name).join(', ') : '--';
+    document.getElementById('cfPattern').style.color = patterns ? (patterns[0].type === 'bull' ? 'var(--long)' : patterns[0].type === 'bear' ? 'var(--short)' : 'var(--text-2)') : 'var(--text-3)';
 
-    // 6. Liq sweep (1.5pts)
+    // 7. Wyckoff MTF
+    const wk = STATE.wyckoff;
+    if (wk.combined === 'strong_bull') { ls += 2; reasons.long.push('WK MTF Bull'); }
+    else if (wk.combined === 'strong_bear') { ss += 2; reasons.short.push('WK MTF Bear'); }
+    else if (wk.combined === 'conflict') {
+        warnings.long.push('WK MTF Conflict (-1)');
+        warnings.short.push('WK MTF Conflict (-1)');
+        ls -= 1;
+        ss -= 1;
+    }
+    document.getElementById('cfWyckoff').textContent = wk.combined === 'strong_bull' ? '✓ ALIGN' : wk.combined === 'strong_bear' ? '✓ ALIGN' : wk.combined === 'conflict' ? '⚠ CONFLICT' : 'NEUTRAL';
+    document.getElementById('cfWyckoff').style.color = wk.combined.includes('bull') ? 'var(--long)' : wk.combined.includes('bear') ? 'var(--short)' : wk.combined === 'conflict' ? 'var(--warn)' : 'var(--text-3)';
+
+    // 8. Liq sweep
     const sweep = detectLiquiditySweep(candles);
     if (sweep === 'bull') { ls += 1.5; reasons.long.push('Liq Sweep'); }
     if (sweep === 'bear') { ss += 1.5; reasons.short.push('Liq Sweep'); }
     document.getElementById('cfLiq').textContent = sweep ? sweep.toUpperCase()+' SWEEP' : '--';
     document.getElementById('cfLiq').style.color = sweep === 'bull' ? 'var(--long)' : sweep === 'bear' ? 'var(--short)' : 'var(--text-3)';
 
-    // 7. Volume (1pt)
+    // 9. Volume
     const avgV = candles.slice(-20).reduce((a,c)=>a+c.v,0)/20;
     const lastV = candles[candles.length-1].v, vc = lastV > avgV * 1.3;
-    if (vc) { if (candles[candles.length-1].c > candles[candles.length-1].o) { ls += 1; reasons.long.push('Vol ✓'); } else { ss += 1; reasons.short.push('Vol ✓'); }}
+    if (vc) { 
+        if (candles[candles.length-1].c > candles[candles.length-1].o) { ls += 1; reasons.long.push('Vol ✓'); } 
+        else { ss += 1; reasons.short.push('Vol ✓'); }
+    }
     document.getElementById('cfVol').textContent = vc ? `✓ ${(lastV/avgV).toFixed(1)}x` : `${(lastV/avgV).toFixed(1)}x`;
     document.getElementById('cfVol').style.color = vc ? 'var(--long)' : 'var(--text-3)';
 
-    // Decision - ERHÖHTER THRESHOLD auf 7.5 für höhere Qualität
-    const dir = ls > ss ? 'long' : 'short', score = dir === 'long' ? ls : ss, rl = dir === 'long' ? reasons.long : reasons.short;
+    // 10. TREND ALIGNMENT
+    let trendWarning = false;
+    if (STATE.currentTrend === 'bullish' && ss > ls) {
+        warnings.short.push('Gegen Trend (Bull) (-1.5)');
+        ss -= 1.5;
+        trendWarning = true;
+    } else if (STATE.currentTrend === 'bearish' && ls > ss) {
+        warnings.long.push('Gegen Trend (Bear) (-1.5)');
+        ls -= 1.5;
+        trendWarning = true;
+    }
     
-    // Mindestens 7.5 Punkte und mindestens 3 Konfluenzen
+    const tb = STATE.currentTrend === 'bullish' ? 0.5 : STATE.currentTrend === 'bearish' ? -0.5 : 0;
+    ls += Math.max(0, tb); 
+    ss += Math.max(0, -tb);
+    
+    document.getElementById('cfTrend').textContent = trendWarning ? '⚠ ' + STATE.currentTrend.toUpperCase() : '✓ ' + STATE.currentTrend.toUpperCase();
+    document.getElementById('cfTrend').style.color = trendWarning ? 'var(--warn)' : STATE.currentTrend === 'bullish' ? 'var(--long)' : 'var(--short)';
+
+    // Decision
+    const dir = ls > ss ? 'long' : 'short';
+    let score = dir === 'long' ? ls : ss;
+    let rl = dir === 'long' ? reasons.long : reasons.short;
+    let wl = dir === 'long' ? warnings.long : warnings.short;
+    
     if (score >= 7.5 && rl.length >= 3) {
         const entry = price;
-        // Größere Stops für Swing-Trading
-        const sl = dir === 'long' ? entry - atrVal*2.5 : entry + atrVal*2.5;
-        const tp1 = dir === 'long' ? entry + atrVal*5 : entry - atrVal*5;
-        const tp2 = dir === 'long' ? entry + atrVal*8 : entry - atrVal*8;
-        const rr = Math.abs(tp1 - entry) / Math.abs(entry - sl);
+        const swings = STATE.swingPoints || [];
+        let sl;
+        const buffer = atrVal * 0.3;
+
+        if (dir === 'long') {
+            const candidates = swings
+                .filter(s => s.type === 'low' && s.price < entry && s.price > entry - atrVal * 5)
+                .sort((a, b) => b.price - a.price);
+            sl = candidates.length > 0 ? candidates[0].price - buffer : entry - atrVal * 2.5;
+        } else {
+            const candidates = swings
+                .filter(s => s.type === 'high' && s.price > entry && s.price < entry + atrVal * 5)
+                .sort((a, b) => a.price - b.price);
+            sl = candidates.length > 0 ? candidates[0].price + buffer : entry + atrVal * 2.5;
+        }
+
+        const slDist = Math.abs(entry - sl);
+        const tp1 = dir === 'long' ? entry + slDist * 2 : entry - slDist * 2;
+        const tp2 = dir === 'long' ? entry + slDist * 3.5 : entry - slDist * 3.5;
+        const rr = Math.abs(tp1 - entry) / slDist;
         
-        // Mindestens 1:2 R:R
-        if (rr < 2) {
+        if (rr < 1.9) {
             renderNoSignal(score);
             return;
         }
         
-        const quality = score >= 9 ? 'A+' : score >= 8 ? 'A' : 'B';
+        let quality = score >= 9 ? 'A+' : score >= 8 ? 'A' : 'B';
+        if (wl.length > 0 && quality === 'A+') quality = 'A';
+        else if (wl.length > 0 && quality === 'A') quality = 'B';
+        
         const sig = { 
             direction: dir, 
             entry, 
@@ -1379,19 +2031,28 @@ function generateSignals() {
             quality, 
             score, 
             reasons: rl, 
+            warnings: wl,
             time: Date.now(), 
             status: 'active',
             tf: STATE.currentTF,
-            atr: atrVal
+            atr: atrVal,
+            pattern: patterns ? patterns.map(p => p.name).join(', ') : null
         };
+        
         STATE.activeSignal = sig;
         STATE.signalCooldown = Date.now() + STATE.COOLDOWN_MS;
         STATE.signalCount++;
         renderActiveSignal(sig); 
         addSignalToHistory(sig);
-        showToast(dir, quality, entry, sl, tp1, rl.join(', '));
-        if ('Notification' in window && Notification.permission === 'granted') new Notification(`${dir.toUpperCase()} SIGNAL (${quality})`, { body: `Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | TP1: $${tp1.toFixed(0)}` });
-    } else { renderNoSignal(Math.max(ls, ss)); }
+        showToast(dir, quality, entry, sl, tp1, rl.join(', '), wl.length > 0);
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(`${dir.toUpperCase()} SIGNAL (${quality})`, { 
+                body: `Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | ${wl.length > 0 ? '⚠ Mit Warnungen' : ''}` 
+            });
+        }
+    } else { 
+        renderNoSignal(Math.max(ls, ss)); 
+    }
 }
 
 function detectLiquiditySweep(candles) {
@@ -1408,24 +2069,40 @@ function detectLiquiditySweep(candles) {
 // SIGNAL UI
 // ============================================================
 function renderActiveSignal(sig) {
-    document.getElementById('activeSignalCard').className = `signal-card active-${sig.direction}`;
+    const hasWarnings = sig.warnings && sig.warnings.length > 0;
+    document.getElementById('activeSignalCard').className = `signal-card active-${sig.direction} ${hasWarnings ? 'warning' : ''}`;
     document.getElementById('sigDirection').textContent = sig.direction.toUpperCase();
     document.getElementById('sigDirection').style.color = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
     document.getElementById('sigQuality').textContent = sig.quality;
     document.getElementById('sigQuality').className = `signal-quality ${sig.quality === 'A+' || sig.quality === 'A' ? 'quality-a' : sig.quality === 'B' ? 'quality-b' : 'quality-c'}`;
     document.getElementById('sigEntry').textContent = '$' + sig.entry.toFixed(0);
-    document.getElementById('sigSL').textContent = '$' + sig.sl.toFixed(0); document.getElementById('sigSL').style.color = 'var(--short)';
-    document.getElementById('sigTP1').textContent = '$' + sig.tp1.toFixed(0); document.getElementById('sigTP1').style.color = 'var(--long)';
-    document.getElementById('sigTP2').textContent = '$' + sig.tp2.toFixed(0); document.getElementById('sigTP2').style.color = 'var(--long)';
-    document.getElementById('sigRR').textContent = '1:' + sig.rr.toFixed(1); document.getElementById('sigRR').style.color = sig.rr >= 2 ? 'var(--long)' : sig.rr >= 1.5 ? 'var(--warn)' : 'var(--short)';
+    document.getElementById('sigSL').textContent = '$' + sig.sl.toFixed(0); 
+    document.getElementById('sigSL').style.color = 'var(--short)';
+    document.getElementById('sigTP1').textContent = '$' + sig.tp1.toFixed(0); 
+    document.getElementById('sigTP1').style.color = 'var(--long)';
+    document.getElementById('sigTP2').textContent = '$' + sig.tp2.toFixed(0); 
+    document.getElementById('sigTP2').style.color = 'var(--long)';
+    document.getElementById('sigRR').textContent = '1:' + sig.rr.toFixed(1); 
+    document.getElementById('sigRR').style.color = sig.rr >= 2 ? 'var(--long)' : sig.rr >= 1.5 ? 'var(--warn)' : 'var(--short)';
     document.getElementById('sigConf').textContent = sig.score.toFixed(1) + '/12';
-    document.getElementById('sigReason').textContent = sig.reasons.slice(0,3).join(', '); document.getElementById('sigReason').style.color = 'var(--text-1)';
-    document.getElementById('signalBadge').textContent = sig.direction.toUpperCase();
+    document.getElementById('sigPattern').textContent = sig.pattern || '--';
+    document.getElementById('sigPattern').style.color = sig.pattern ? 'var(--accent)' : 'var(--text-3)';
+    document.getElementById('sigReason').textContent = sig.reasons.slice(0,3).join(', '); 
+    document.getElementById('sigReason').style.color = 'var(--text-1)';
+    
+    const warnEl = document.getElementById('sigWarning');
+    if (hasWarnings) {
+        warnEl.textContent = '⚠ ' + sig.warnings.join(', ');
+        warnEl.style.display = 'block';
+    } else {
+        warnEl.style.display = 'none';
+    }
+    
+    document.getElementById('signalBadge').textContent = sig.direction.toUpperCase() + (hasWarnings ? ' ⚠' : '');
     document.getElementById('signalBadge').style.background = sig.direction === 'long' ? 'var(--long-dim)' : 'var(--short-dim)';
     document.getElementById('signalBadge').style.color = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
     document.getElementById('signalCount').textContent = STATE.signalCount;
     
-    // Click handler für aktives Signal
     document.getElementById('activeSignalCard').onclick = () => openSignalModal(sig);
 }
 
@@ -1433,14 +2110,28 @@ function renderNoSignal(score) {
     const card = document.getElementById('activeSignalCard');
     card.className = 'signal-card';
     card.onclick = null;
-    document.getElementById('sigDirection').textContent = 'WARTE...'; document.getElementById('sigDirection').style.color = 'var(--text-3)';
-    document.getElementById('sigQuality').textContent = score > 0 ? score.toFixed(0)+'/12' : '--'; document.getElementById('sigQuality').className = 'signal-quality quality-none';
-    document.getElementById('signalBadge').textContent = 'SCANNING'; document.getElementById('signalBadge').style.background = 'var(--bg-3)'; document.getElementById('signalBadge').style.color = 'var(--text-3)';
+    document.getElementById('sigDirection').textContent = 'WARTE...'; 
+    document.getElementById('sigDirection').style.color = 'var(--text-3)';
+    document.getElementById('sigQuality').textContent = score > 0 ? score.toFixed(0)+'/12' : '--'; 
+    document.getElementById('sigQuality').className = 'signal-quality quality-none';
+    document.getElementById('sigPattern').textContent = '--';
+    document.getElementById('sigPattern').style.color = 'var(--text-3)';
+    document.getElementById('sigWarning').style.display = 'none';
+    document.getElementById('signalBadge').textContent = 'SCANNING'; 
+    document.getElementById('signalBadge').style.background = 'var(--bg-3)'; 
+    document.getElementById('signalBadge').style.color = 'var(--text-3)';
 }
 
-function updateCooldownBar() { const r = STATE.signalCooldown - Date.now(); document.getElementById('cooldownFill').style.width = Math.max(0, r/STATE.COOLDOWN_MS*100) + '%'; }
+function updateCooldownBar() { 
+    const r = STATE.signalCooldown - Date.now(); 
+    document.getElementById('cooldownFill').style.width = Math.max(0, r/STATE.COOLDOWN_MS*100) + '%'; 
+}
 
-function addSignalToHistory(sig) { STATE.signalHistory.unshift(sig); STATE.historyPage = 0; renderSignalHistory(); }
+function addSignalToHistory(sig) { 
+    STATE.signalHistory.unshift(sig); 
+    STATE.historyPage = 0; 
+    renderSignalHistory(); 
+}
 
 function renderSignalHistory() {
     const el = document.getElementById('signalHistory'); 
@@ -1465,15 +2156,17 @@ function renderSignalHistory() {
         else if (sig.status === 'tp2') { rt = 'TP2 ✓'; rc = 'var(--long)'; }
         else if (sig.status === 'sl') { rt = 'SL ✗'; rc = 'var(--short)'; }
         else if (sig.status === 'expired') { rt = 'EXP'; rc = 'var(--text-3)'; }
-        return `<div class="history-item" onclick="openSignalModal(STATE.signalHistory[${idx}])">
-            <span style="color:${dc};font-weight:700">${sig.direction.toUpperCase()}</span>
+        
+        const hasWarn = sig.warnings && sig.warnings.length > 0;
+        
+        return `<div class="history-item ${hasWarn ? 'warning' : ''}" onclick="openSignalModal(STATE.signalHistory[${idx}])">
+            <span style="color:${dc};font-weight:700">${sig.direction.toUpperCase()}${hasWarn ? ' ⚠' : ''}</span>
             <span style="color:var(--text-2)">$${sig.entry.toFixed(0)} | ${sig.quality}</span>
             <span style="color:${rc};font-weight:600;text-align:right">${rt}</span>
             <span style="color:var(--text-3);text-align:right">${time}</span>
         </div>`;
     }).join('');
     
-    // Load more button anzeigen wenn es mehr gibt
     if (end < STATE.signalHistory.length) {
         btn.style.display = 'block';
         btn.textContent = `Mehr laden (${STATE.signalHistory.length - end} verbleibend)`;
@@ -1500,7 +2193,6 @@ function openSignalModal(sig) {
                        sig.status === 'sl' ? 'STOP LOSS' :
                        sig.status === 'expired' ? 'ABGELAUFEN' : 'UNBEKANNT';
     
-    // Berechne aktuelles P&L wenn aktiv
     let pnlHtml = '';
     if (sig.status === 'active') {
         const currentPnL = sig.direction === 'long' ? 
@@ -1517,6 +2209,12 @@ function openSignalModal(sig) {
         pnlHtml = `<div class="modal-row"><span class="modal-label">Ergebnis</span><span class="modal-value ${pnlColor}">${pnl}R</span></div>`;
     }
     
+    const hasWarn = sig.warnings && sig.warnings.length > 0;
+    const warnHtml = hasWarn ? `<div class="modal-section" style="border:1px solid var(--warn);border-radius:4px;padding:10px;background:rgba(255,193,7,0.05)">
+        <div class="modal-section-title" style="color:var(--warn)">⚠ Warnungen</div>
+        ${sig.warnings.map(w => `<div class="modal-row" style="color:var(--warn)"><span class="modal-label">•</span><span class="modal-value">${w}</span></div>`).join('')}
+    </div>` : '';
+    
     title.innerHTML = `<span style="color:${dirColor}">${sig.direction.toUpperCase()} SIGNAL (${sig.quality})</span>`;
     title.innerHTML += `<span style="font-size:9px;color:var(--text-3);margin-left:12px">${statusText}</span>`;
     
@@ -1528,6 +2226,7 @@ function openSignalModal(sig) {
             <div class="modal-row"><span class="modal-label">Take Profit 1</span><span class="modal-value" style="color:var(--long)">$${sig.tp1.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">Take Profit 2</span><span class="modal-value" style="color:var(--long)">$${sig.tp2.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">R:R Verhältnis</span><span class="modal-value">1:${sig.rr.toFixed(2)}</span></div>
+            <div class="modal-row"><span class="modal-label">Candle Pattern</span><span class="modal-value" style="color:var(--accent)">${sig.pattern || '--'}</span></div>
             ${pnlHtml}
         </div>
         
@@ -1535,6 +2234,8 @@ function openSignalModal(sig) {
             <div class="modal-section-title">Konfluenz (${sig.score.toFixed(1)} Punkte)</div>
             ${sig.reasons.map(r => `<div class="modal-row"><span class="modal-label">✓</span><span class="modal-value">${r}</span></div>`).join('')}
         </div>
+        
+        ${warnHtml}
         
         <div class="modal-section">
             <div class="modal-section-title">Metadaten</div>
@@ -1552,18 +2253,30 @@ function closeModal() {
 }
 
 function trackSignalOutcomes() {
+    let changed = false;
     STATE.signalHistory.forEach(sig => {
         if (sig.status !== 'active') return;
-        if (Date.now() - sig.time > 24*60*60*1000) { sig.status = 'expired'; return; } // 24h statt 4h
-        if (sig.direction === 'long') { 
-            if (STATE.price <= sig.sl) sig.status = 'sl'; 
-            else if (STATE.price >= sig.tp2) sig.status = 'tp2'; 
-            else if (STATE.price >= sig.tp1) sig.status = 'tp1'; 
+        if (Date.now() - sig.time > 24*60*60*1000) { sig.status = 'expired'; changed = true; return; }
+        const prev = sig.status;
+        if (sig.direction === 'long') {
+            if (STATE.price <= sig.sl) sig.status = 'sl';
+            else if (STATE.price >= sig.tp2) sig.status = 'tp2';
+            else if (STATE.price >= sig.tp1) sig.status = 'tp1';
+        } else {
+            if (STATE.price >= sig.sl) sig.status = 'sl';
+            else if (STATE.price <= sig.tp2) sig.status = 'tp2';
+            else if (STATE.price <= sig.tp1) sig.status = 'tp1';
         }
-        else { 
-            if (STATE.price >= sig.sl) sig.status = 'sl'; 
-            else if (STATE.price <= sig.tp2) sig.status = 'tp2'; 
-            else if (STATE.price <= sig.tp1) sig.status = 'tp1'; 
+        if (sig.status !== prev) {
+            changed = true;
+            const isWin = sig.status !== 'sl';
+            const label = sig.status === 'tp2' ? 'TP2 HIT ✓ +3.5R' : sig.status === 'tp1' ? 'TP1 HIT ✓ +2R' : 'STOP LOSS ✗ -1R';
+            const col = isWin ? 'var(--long)' : 'var(--short)';
+            const t = document.createElement('div');
+            t.className = `toast ${isWin ? 'long-toast' : 'short-toast'}`;
+            t.innerHTML = `<div class="toast-title" style="color:${col}">${sig.direction.toUpperCase()} ${label}</div><div class="toast-body">Entry $${sig.entry.toFixed(0)} | Exit ~$${STATE.price.toFixed(0)}${sig.warnings && sig.warnings.length > 0 ? '<br>⚠ Hatte Warnungen' : ''}</div><div class="toast-time">${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>`;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 8000);
         }
     });
     const closed = STATE.signalHistory.filter(s => ['tp1','tp2','sl'].includes(s.status));
@@ -1572,26 +2285,24 @@ function trackSignalOutcomes() {
         document.getElementById('liveWinRate').textContent = wr + '%';
         document.getElementById('liveWinRate').style.color = wr >= 60 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)';
     }
-    renderSignalHistory();
+    if (changed) { renderSignalHistory(); updateSessionStats(); }
 }
 
-function showToast(dir, quality, entry, sl, tp1, reasons) {
+function showToast(dir, quality, entry, sl, tp1, reasons, hasWarning) {
     const c = document.getElementById('toastContainer'), t = document.createElement('div');
-    t.className = `toast ${dir === 'long' ? 'long-toast' : 'short-toast'}`;
-    t.innerHTML = `<div class="toast-title" style="color:${dir === 'long' ? 'var(--long)' : 'var(--short)'}">${dir.toUpperCase()} SIGNAL (${quality})</div><div class="toast-body">Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | TP: $${tp1.toFixed(0)}<br>${reasons}</div><div class="toast-time">${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
+    t.className = `toast ${dir === 'long' ? 'long-toast' : 'short-toast'} ${hasWarning ? 'warn-toast' : ''}`;
+    t.innerHTML = `<div class="toast-title" style="color:${dir === 'long' ? 'var(--long)' : 'var(--short)'}">${dir.toUpperCase()} SIGNAL (${quality})${hasWarning ? ' ⚠' : ''}</div><div class="toast-body">Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | TP: $${tp1.toFixed(0)}<br>${reasons}</div><div class="toast-time">${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
     c.appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 12000);
 }
 
 // ============================================================
-// CHART WITH ZOOM & PAN - KORRIGIERT
+// CHARTS & ANNOTATIONS
 // ============================================================
 function getTimeUnit(tf) {
-    // Bestimme die passende Zeit-Unit basierend auf Timeframe
     if (tf.includes('m')) return 'minute';
     if (tf.includes('h') || tf.includes('H')) return 'hour';
     if (tf.includes('d') || tf.includes('D')) return 'day';
-    if (tf.includes('w') || tf.includes('W')) return 'week';
     return 'hour';
 }
 
@@ -1602,13 +2313,25 @@ function getTimeFormat(tf) {
     return { day: 'dd.MM' };
 }
 
+function syncCharts(sourceChart) {
+    if (STATE.isSyncing) return;
+    STATE.isSyncing = true;
+    const targetChart = sourceChart === STATE.chart ? STATE.volumeChart : STATE.chart;
+    if (!targetChart) { STATE.isSyncing = false; return; }
+    const xScale = sourceChart.scales.x;
+    targetChart.scales.x.options.min = xScale.min;
+    targetChart.scales.x.options.max = xScale.max;
+    targetChart.update('none');
+    setTimeout(() => { STATE.isSyncing = false; }, 10);
+}
+
 function buildAnnotations() {
     const candles = STATE.tfData[STATE.currentTF];
     if (!candles || !candles.length) return {};
     const annotations = {};
     let aid = 0;
 
-    // FVG zones
+    // FVG
     if (STATE.overlays.fvg) {
         STATE.fvgs.filter(f => f.status !== 'filled').slice(-6).forEach(f => {
             annotations['fvg' + aid++] = {
@@ -1616,23 +2339,111 @@ function buildAnnotations() {
                 yMin: f.bottom,
                 yMax: f.top,
                 xMin: f.time,
-                backgroundColor: f.type === 'bullish' ? 'rgba(0,230,118,0.06)' : 'rgba(255,23,68,0.06)',
-                borderColor: f.type === 'bullish' ? 'rgba(0,230,118,0.25)' : 'rgba(255,23,68,0.25)',
+                backgroundColor: f.type === 'bullish' ? 'rgba(0,230,118,0.08)' : 'rgba(255,23,68,0.08)',
+                borderColor: f.type === 'bullish' ? 'rgba(0,230,118,0.4)' : 'rgba(255,23,68,0.4)',
                 borderWidth: 1,
                 borderDash: [3, 3],
                 label: {
                     display: true,
-                    content: f.type === 'bullish' ? 'FVG ↑' : 'FVG ↓',
+                    content: `FVG ${(f.size*100).toFixed(1)}%`,
                     position: 'start',
                     font: { size: 8, family: 'JetBrains Mono' },
-                    color: f.type === 'bullish' ? 'rgba(0,230,118,0.6)' : 'rgba(255,23,68,0.6)',
+                    color: f.type === 'bullish' ? 'rgba(0,230,118,0.8)' : 'rgba(255,23,68,0.8)',
                     backgroundColor: 'transparent'
                 }
             };
         });
     }
 
-    // Order Block zones
+    // Fibonacci
+    if (STATE.overlays.fib && STATE.fibLevels.levels[618]) {
+        const fibColors = {
+            0: 'rgba(255,255,255,0.3)',
+            382: 'rgba(255,193,7,0.4)',
+            50: 'rgba(160,168,184,0.4)',
+            618: 'rgba(0,230,118,0.4)',
+            786: 'rgba(255,23,68,0.4)',
+            100: 'rgba(255,255,255,0.3)'
+        };
+        
+        Object.entries(STATE.fibLevels.levels).forEach(([level, price]) => {
+            const levelNum = parseInt(level);
+            annotations['fib' + aid++] = {
+                type: 'line',
+                yMin: price,
+                yMax: price,
+                borderColor: fibColors[level] || 'rgba(128,128,128,0.3)',
+                borderWidth: level === '0' || level === '100' ? 1 : 1.5,
+                borderDash: [5, 5],
+                label: {
+                    display: true,
+                    content: level === '0' ? '0%' : level === '100' ? '100%' : level + '%',
+                    position: 'end',
+                    font: { size: 8, family: 'JetBrains Mono' },
+                    color: fibColors[level] || '#888',
+                    backgroundColor: 'rgba(6,8,10,0.8)',
+                    padding: { top: 2, bottom: 2, left: 4, right: 4 }
+                }
+            };
+        });
+    }
+
+    // Sessions
+    if (STATE.overlays.session) {
+        const candles = STATE.tfData[STATE.currentTF];
+        if (candles && candles.length) {
+            // Asian: 00:00-09:00 UTC (Gold)
+            // London: 09:00-17:00 UTC (Cyan)
+            // NY: 14:00-22:00 UTC (Orange)
+            
+            const sessionColors = {
+                asian: 'rgba(255,215,0,0.05)',
+                london: 'rgba(0,188,212,0.05)',
+                ny: 'rgba(255,87,34,0.05)',
+                overlap: 'rgba(255,87,34,0.1)'
+            };
+            
+            // Finde Session-Bereiche in den aktuellen Daten
+            candles.forEach((c, i) => {
+                if (i % 20 === 0) { // Nur alle 20 Candles prüfen für Performance
+                    const date = new Date(c.t);
+                    const hour = date.getUTCHours();
+                    
+                    let sessionType = null;
+                    if (hour >= 0 && hour < 9) sessionType = 'asian';
+                    else if (hour >= 9 && hour < 14) sessionType = 'london';
+                    else if (hour >= 14 && hour < 17) sessionType = 'overlap'; // London/NY
+                    else if (hour >= 17 && hour < 22) sessionType = 'ny';
+                    
+                    if (sessionType) {
+                        // Finde Session-Start und Ende im Chart
+                        const sessionStart = new Date(c.t);
+                        sessionStart.setUTCMinutes(0, 0, 0);
+                        if (sessionType === 'asian') sessionStart.setUTCHours(0);
+                        else if (sessionType === 'london') sessionStart.setUTCHours(9);
+                        else if (sessionType === 'overlap') sessionStart.setUTCHours(14);
+                        else if (sessionType === 'ny') sessionStart.setUTCHours(17);
+                        
+                        const sessionEnd = new Date(sessionStart);
+                        sessionEnd.setUTCHours(sessionStart.getUTCHours() + (sessionType === 'overlap' ? 3 : 8));
+                        
+                        annotations['session' + aid++] = {
+                            type: 'box',
+                            xMin: sessionStart.getTime(),
+                            xMax: Math.min(sessionEnd.getTime(), candles[candles.length-1].t + 3600000),
+                            backgroundColor: sessionColors[sessionType],
+                            borderWidth: 0,
+                            label: {
+                                display: false
+                            }
+                        };
+                    }
+                }
+            });
+        }
+    }
+
+    // Order Blocks
     if (STATE.overlays.ob) {
         STATE.orderBlocks.slice(-4).forEach(ob => {
             annotations['ob' + aid++] = {
@@ -1655,7 +2466,7 @@ function buildAnnotations() {
         });
     }
 
-    // MSS / BOS markers
+    // MSS/BOS
     if (STATE.overlays.mss) {
         [...STATE.mssEvents.slice(-6), ...STATE.bosEvents.slice(-6)].forEach(ev => {
             const isMSS = ev.type.startsWith('MSS');
@@ -1681,15 +2492,14 @@ function buildAnnotations() {
         });
     }
 
-    // Liquidity levels
+    // Liquidity
     if (STATE.overlays.liq) {
         STATE.liquidityLevels.slice(0, 4).forEach(l => {
-            const above = l.price > STATE.price;
             annotations['liq' + aid++] = {
                 type: 'line',
                 yMin: l.price,
                 yMax: l.price,
-                borderColor: above ? 'rgba(255,193,7,0.35)' : 'rgba(255,193,7,0.35)',
+                borderColor: 'rgba(255,193,7,0.35)',
                 borderWidth: 1,
                 borderDash: [8, 4],
                 label: {
@@ -1720,7 +2530,6 @@ function initChart() {
 
     const datasets = [];
 
-    // Main price data
     if (STATE.chartType === 'candles') {
         datasets.push({
             label: 'BTC',
@@ -1744,7 +2553,6 @@ function initChart() {
         });
     }
 
-    // EMAs
     if (showEma) {
         datasets.push(
             { label: 'EMA 20', data: ema20.map((v, i) => ({ x: candles[i].t, y: v })), type: 'line', borderColor: 'rgba(0,230,118,0.8)', borderWidth: 1.5, pointRadius: 0, fill: false, order: 1 },
@@ -1790,38 +2598,23 @@ function initChart() {
                 },
                 annotation: { annotations: buildAnnotations() },
                 zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'xy',
-                        modifierKey: null,
-                    },
+                    pan: { enabled: false },
                     zoom: {
-                        wheel: { enabled: true },
+                        wheel: { enabled: true, speed: 0.08 },
                         pinch: { enabled: true },
+                        drag: { enabled: false },
                         mode: 'xy',
+                        onZoom: ({chart}) => syncCharts(chart)
                     },
-                    limits: {
-                        x: { min: 'original', max: 'original' },
-                        y: { min: 'original', max: 'original' }
-                    }
+                    limits: {}
                 }
             },
             scales: {
                 x: {
                     type: 'time',
-                    time: { 
-                        unit: timeUnit,
-                        displayFormats: timeFormats,
-                        tooltipFormat: 'dd.MM.yyyy HH:mm'
-                    },
+                    time: { unit: timeUnit, displayFormats: timeFormats, tooltipFormat: 'dd.MM.yyyy HH:mm' },
                     grid: { color: 'rgba(30,37,48,0.5)' },
-                    ticks: { 
-                        color: '#444e5f', 
-                        font: { family: 'JetBrains Mono', size: 9 }, 
-                        maxRotation: 0, 
-                        autoSkip: true, 
-                        maxTicksLimit: 8 
-                    }
+                    ticks: { color: '#444e5f', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
                 },
                 y: {
                     position: 'right',
@@ -1832,11 +2625,192 @@ function initChart() {
         }
     });
     
-    // Doppelklick zum Zurücksetzen
     document.getElementById('mainChart').addEventListener('dblclick', () => {
         if (STATE.chart) STATE.chart.resetZoom();
+        if (STATE.volumeChart) STATE.volumeChart.resetZoom();
+    });
+    setupChartInteraction();
+    initVolumeChart();
+}
+
+function initVolumeChart() {
+    if (STATE.volumeChart) { STATE.volumeChart.destroy(); STATE.volumeChart = null; }
+    const ctx = document.getElementById('volumeChart').getContext('2d');
+    const candles = STATE.tfData[STATE.currentTF];
+    if (!candles || !candles.length) return;
+    
+    const timeUnit = getTimeUnit(STATE.currentTF);
+    
+    STATE.volumeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            datasets: [{
+                label: 'Volumen',
+                data: candles.map(c => ({
+                    x: c.t,
+                    y: c.v,
+                    backgroundColor: c.c >= c.o ? 'rgba(0, 230, 118, 0.5)' : 'rgba(255, 23, 68, 0.5)'
+                })),
+                backgroundColor: ctx => {
+                    const raw = ctx.raw;
+                    return raw?.backgroundColor || 'rgba(128,128,128,0.3)';
+                },
+                borderWidth: 0,
+                barPercentage: 0.7,
+                categoryPercentage: 0.9
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(12,15,19,0.95)',
+                    titleColor: '#e8ecf1',
+                    bodyColor: '#a0a8b8',
+                    borderColor: '#2a3140',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: ctx => {
+                            const date = new Date(ctx[0].parsed.x);
+                            return date.toLocaleString('de-DE');
+                        },
+                        label: ctx => {
+                            const val = ctx.raw.y;
+                            return `Volumen: ${val >= 1000000 ? (val/1000000).toFixed(2) + 'M' : (val/1000).toFixed(1) + 'k'}`;
+                        }
+                    }
+                },
+                zoom: {
+                    pan: { enabled: false },
+                    zoom: {
+                        wheel: { enabled: false },
+                        pinch: { enabled: false }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit },
+                    grid: { display: false, drawBorder: false },
+                    ticks: { display: false },
+                    min: STATE.chart ? STATE.chart.scales.x.min : undefined,
+                    max: STATE.chart ? STATE.chart.scales.x.max : undefined
+                },
+                y: {
+                    position: 'right',
+                    grid: { color: 'rgba(30,37,48,0.2)', drawBorder: false },
+                    ticks: { 
+                        color: '#444e5f', 
+                        font: { size: 8, family: 'JetBrains Mono' },
+                        maxTicksLimit: 3,
+                        callback: v => v >= 1000000 ? (v/1000000).toFixed(0)+'M' : (v/1000).toFixed(0)+'k'
+                    }
+                }
+            }
+        }
     });
 }
+
+function setupChartInteraction() {
+    const canvas = document.getElementById('mainChart');
+    if (canvas._tvInteractionActive) return;
+    canvas._tvInteractionActive = true;
+
+    let isDragging = false, dragMode = null;
+    let startX, startY, startXMin, startXMax, startYMin, startYMax;
+
+    function getChartArea() { return STATE.chart ? STATE.chart.chartArea : null; }
+    function getScales() { return STATE.chart ? { x: STATE.chart.scales.x, y: STATE.chart.scales.y } : null; }
+
+    function getDragMode(ex, ey) {
+        const ca = getChartArea(); if (!ca) return null;
+        const rect = canvas.getBoundingClientRect();
+        const x = ex - rect.left, y = ey - rect.top;
+        if (x > ca.right && y >= ca.top && y <= ca.bottom) return 'yscale';
+        if (y > ca.bottom && x >= ca.left && x <= ca.right) return 'xscale';
+        if (x >= ca.left && x <= ca.right && y >= ca.top && y <= ca.bottom) return 'pan';
+        return null;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || !STATE.chart) return;
+        const mode = getDragMode(e.clientX, e.clientY); if (!mode) return;
+        isDragging = true; dragMode = mode;
+        startX = e.clientX; startY = e.clientY;
+        const { x, y } = getScales();
+        startXMin = x.min; startXMax = x.max; startYMin = y.min; startYMax = y.max;
+        canvas.style.cursor = mode === 'pan' ? 'grabbing' : mode === 'yscale' ? 'ns-resize' : 'ew-resize';
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging || !STATE.chart) return;
+        const dx = e.clientX - startX, dy = e.clientY - startY;
+        const ca = getChartArea();
+        const { x: xScale, y: yScale } = getScales();
+        const xRange = startXMax - startXMin, yRange = startYMax - startYMin;
+        const pxW = ca.right - ca.left, pxH = ca.bottom - ca.top;
+
+        if (dragMode === 'pan') {
+            xScale.options.min = startXMin - (dx / pxW) * xRange;
+            xScale.options.max = startXMax - (dx / pxW) * xRange;
+            yScale.options.min = startYMin + (dy / pxH) * yRange;
+            yScale.options.max = startYMax + (dy / pxH) * yRange;
+        } else if (dragMode === 'xscale') {
+            const factor = Math.pow(1.005, -dx);
+            const xCenter = (startXMin + startXMax) / 2;
+            const newRange = xRange * factor;
+            xScale.options.min = xCenter - newRange / 2;
+            xScale.options.max = xCenter + newRange / 2;
+        } else if (dragMode === 'yscale') {
+            const factor = Math.pow(1.005, dy);
+            const yCenter = (startYMin + startYMax) / 2;
+            const newRange = yRange * factor;
+            yScale.options.min = yCenter - newRange / 2;
+            yScale.options.max = yCenter + newRange / 2;
+        }
+        STATE.chart.update('none');
+        syncCharts(STATE.chart);
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false; dragMode = null;
+        canvas.style.cursor = 'crosshair';
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging || !STATE.chart) return;
+        const mode = getDragMode(e.clientX, e.clientY);
+        canvas.style.cursor = mode === 'pan' ? 'grab' : mode === 'yscale' ? 'ns-resize' : mode === 'xscale' ? 'ew-resize' : 'default';
+    });
+
+    canvas.addEventListener('mouseleave', () => { if (!isDragging) canvas.style.cursor = 'crosshair'; });
+}
+
+(function() {
+    if (window._keyZoomAttached) return;
+    window._keyZoomAttached = true;
+    document.addEventListener('keydown', (e) => {
+        if (!STATE.chart) return;
+        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+        if (e.key === '+' || e.key === '=') { 
+            e.preventDefault(); 
+            STATE.chart.zoom(1.15); 
+            syncCharts(STATE.chart);
+        }
+        else if (e.key === '-') { 
+            e.preventDefault(); 
+            STATE.chart.zoom(0.87); 
+            syncCharts(STATE.chart);
+        }
+    });
+})();
 
 function updateChart() {
     if (!STATE.chart) return;
@@ -1845,14 +2819,12 @@ function updateChart() {
 
     const closes = candles.map(c => c.c);
 
-    // Update price dataset
     if (STATE.chartType === 'candles') {
         STATE.chart.data.datasets[0].data = candles.map(c => ({ x: c.t, o: c.o, h: c.h, l: c.l, c: c.c }));
     } else {
         STATE.chart.data.datasets[0].data = closes.map((c, i) => ({ x: candles[i].t, y: c }));
     }
 
-    // Update EMAs if shown
     if (STATE.overlays.ema && STATE.chart.data.datasets.length > 1) {
         const ema20 = calcEMA(closes, 20), ema50 = calcEMA(closes, 50), ema100 = calcEMA(closes, 100), ema200 = calcEMA(closes, 200);
         STATE.chart.data.datasets[1].data = ema20.map((v, i) => ({ x: candles[i].t, y: v }));
@@ -1861,48 +2833,60 @@ function updateChart() {
         STATE.chart.data.datasets[4].data = ema200.map((v, i) => ({ x: candles[i].t, y: v }));
     }
 
-    // Update annotations
     STATE.chart.options.plugins.annotation.annotations = buildAnnotations();
-
     STATE.chart.update('none');
-}
-
-// ============================================================
-// BACKTEST
-// ============================================================
-function runQuickBacktest() {
-    const data = STATE.tfData['1h'];
-    if (!data || data.length < 200) return;
-    let trades = [], eq = 10000, mxEq = 10000, mxDD = 0;
-    for (let i = 60; i < data.length - 30; i += 5) {
-        const sl = data.slice(Math.max(0,i-60), i), fut = data.slice(i, i+20), p = data[i].c;
-        let sig = null;
-        for (let j = sl.length-1; j >= sl.length-10 && j >= 2; j--) {
-            if (sl[j].l > sl[j-2].h && p >= sl[j-2].h && p <= sl[j].l) { sig = { d: 'l', e: p, s: sl[j-2].h*0.997, t: p*1.01 }; break; }
-            if (sl[j].h < sl[j-2].l && p <= sl[j-2].l && p >= sl[j].h) { sig = { d: 's', e: p, s: sl[j-2].l*1.003, t: p*0.99 }; break; }
-        }
-        if (!sig) continue;
-        let win = false;
-        for (const c of fut) {
-            if (sig.d === 'l') { if (c.l <= sig.s) break; if (c.h >= sig.t) { win = true; break; } }
-            else { if (c.h >= sig.s) break; if (c.l <= sig.t) { win = true; break; } }
-        }
-        const r = eq * 0.01, pnl = win ? r*1.5 : -r;
-        eq += pnl; mxEq = Math.max(mxEq, eq); mxDD = Math.max(mxDD, (mxEq-eq)/mxEq);
-        trades.push({ win, pnl });
+    
+    if (STATE.volumeChart) {
+        STATE.volumeChart.data.datasets[0].data = candles.map(c => ({
+            x: c.t,
+            y: c.v,
+            backgroundColor: c.c >= c.o ? 'rgba(0, 230, 118, 0.5)' : 'rgba(255, 23, 68, 0.5)'
+        }));
+        STATE.volumeChart.update('none');
     }
-    if (!trades.length) return;
-    const w = trades.filter(t=>t.win).length, wr = (w/trades.length*100).toFixed(0);
-    const gw = trades.filter(t=>t.win).reduce((a,t)=>a+t.pnl,0), gl = Math.abs(trades.filter(t=>!t.win).reduce((a,t)=>a+t.pnl,0));
-    const pf = gl > 0 ? (gw/gl).toFixed(1) : '∞';
-    document.getElementById('btWinRate').textContent = wr+'%'; document.getElementById('btWinRate').style.color = wr >= 55 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)';
-    document.getElementById('btPF').textContent = pf; document.getElementById('btPF').style.color = parseFloat(pf) >= 1.5 ? 'var(--long)' : 'var(--warn)';
-    document.getElementById('btRR').textContent = '1:1.5'; document.getElementById('btRR').style.color = 'var(--text-1)';
-    document.getElementById('btDD').textContent = (mxDD*100).toFixed(1)+'%'; document.getElementById('btDD').style.color = mxDD < 0.1 ? 'var(--long)' : mxDD < 0.2 ? 'var(--warn)' : 'var(--short)';
 }
 
 // ============================================================
-// WEBSOCKET
+// SESSION STATS
+// ============================================================
+function updateSessionStats() {
+    const all = STATE.signalHistory;
+    const closed = all.filter(s => ['tp1','tp2','sl'].includes(s.status));
+    const total = all.length;
+
+    document.getElementById('btWinRate').textContent = total;
+    document.getElementById('btWinRate').style.color = total > 0 ? 'var(--text-0)' : 'var(--text-2)';
+
+    if (!closed.length) {
+        document.getElementById('btPF').textContent = '--';
+        document.getElementById('btRR').textContent = '--';
+        document.getElementById('btDD').textContent = '--';
+        return;
+    }
+
+    const wins = closed.filter(s => s.status === 'tp1' || s.status === 'tp2');
+    const wr = (wins.length / closed.length * 100).toFixed(0);
+    document.getElementById('btPF').textContent = wr + '%';
+    document.getElementById('btPF').style.color = wr >= 60 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)';
+
+    const avgRWin = wins.length > 0
+        ? (wins.reduce((a,s) => a + (s.status === 'tp2' ? 3.5 : 2), 0) / wins.length).toFixed(1)
+        : '0';
+    document.getElementById('btRR').textContent = avgRWin + 'R';
+    document.getElementById('btRR').style.color = parseFloat(avgRWin) >= 2 ? 'var(--long)' : 'var(--warn)';
+
+    const totalR = closed.reduce((a,s) => {
+        if (s.status === 'tp2') return a + 3.5;
+        if (s.status === 'tp1') return a + 2;
+        return a - 1;
+    }, 0);
+    const totalRStr = (totalR >= 0 ? '+' : '') + totalR.toFixed(1) + 'R';
+    document.getElementById('btDD').textContent = totalRStr;
+    document.getElementById('btDD').style.color = totalR >= 0 ? 'var(--long)' : 'var(--short)';
+}
+
+// ============================================================
+// WEBSOCKET & INIT
 // ============================================================
 function connectWS() {
     if (STATE.ws) try { STATE.ws.close(); } catch(e) {}
@@ -1937,49 +2921,58 @@ function connectWS() {
         const now = Date.now();
         if (now - lastCU > 2000) { updateChart(); lastCU = now; }
         if (now - lastA > 10000) { runAnalysis(); lastA = now; }
-        if (tc % 50 === 0) { trackSignalOutcomes(); updateCooldownBar(); }
+        trackSignalOutcomes();
+        updateCooldownBar();
     };
 
     ws.onerror = () => { document.getElementById('wsStatus').style.background = 'var(--short)'; document.getElementById('wsStatus').style.boxShadow = '0 0 8px var(--short-glow)'; };
     ws.onclose = () => { document.getElementById('wsStatus').style.background = 'var(--warn)'; document.getElementById('wsStatus').style.boxShadow = '0 0 8px rgba(255,193,7,0.4)'; STATE.wsReconnectTimer = setTimeout(connectWS, 3000); };
 }
 
-// ============================================================
-// ANALYSIS PIPELINE
-// ============================================================
 function runAnalysis() {
     const candles = STATE.tfData[STATE.currentTF];
     if (!candles || candles.length < 50) return;
-    detectFVGs(candles); detectOrderBlocks(candles);
-    detectSwingPoints(candles); detectMSSandBOS(candles);
-    detectLiquidityLevels(); analyzeMTFBias(); analyzeWyckoff();
-    renderFVGList(); renderLiquidity(); renderMTFBias();
+    
+    detectFVGs(candles); 
+    detectOrderBlocks(candles);
+    detectSwingPoints(candles); 
+    detectMSSandBOS(candles);
+    detectLiquidityLevels(); 
+    analyzeMTFBias(); 
+    analyzeWyckoffMTF();
+    calculateFibonacci();
+    detectSession();
+    renderFVGList(); 
+    renderLiquidity(); 
+    renderMTFBias();
     generateSignals();
 }
 
 // ============================================================
 // EVENT HANDLERS
 // ============================================================
-// Timeframe buttons
 document.querySelectorAll('.tf-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
         document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        STATE.currentTF = btn.dataset.tf;
-        if (!STATE.tfData[STATE.currentTF]) {
+        const newTF = btn.dataset.tf;
+        STATE.currentTF = newTF;
+
+        if (!STATE.tfData[STATE.currentTF] || STATE.tfData[STATE.currentTF].length < 10) {
+            btn.style.opacity = '0.5';
             const data = await fetchCandles(STATE.currentTF, 500);
             if (data) STATE.tfData[STATE.currentTF] = data;
+            btn.style.opacity = '1';
         }
+
         initChart();
         runAnalysis();
     });
 });
 
-// Chart type
 document.getElementById('btnLine').addEventListener('click', () => { STATE.chartType = 'line'; document.getElementById('btnLine').classList.add('active'); document.getElementById('btnCandles').classList.remove('active'); initChart(); });
 document.getElementById('btnCandles').addEventListener('click', () => { STATE.chartType = 'candles'; document.getElementById('btnCandles').classList.add('active'); document.getElementById('btnLine').classList.remove('active'); initChart(); });
 
-// Overlay toggles
 document.querySelectorAll('.toggle-chip').forEach(chip => {
     chip.addEventListener('click', () => {
         const key = chip.dataset.overlay;
@@ -1989,39 +2982,45 @@ document.querySelectorAll('.toggle-chip').forEach(chip => {
     });
 });
 
-// Modal schließen bei Klick außerhalb
 document.getElementById('signalModal').addEventListener('click', (e) => {
     if (e.target.id === 'signalModal') closeModal();
 });
 
-// Periodic refresh
 async function refreshData() {
     for (const tf of Object.keys(STATE.tfData)) {
         const data = await fetchCandles(tf, 500);
         if (data) STATE.tfData[tf] = data;
     }
-    runAnalysis(); runQuickBacktest();
+    runAnalysis();
+    updateSessionStats();
 }
 
-// ============================================================
-// INIT
-// ============================================================
 async function init() {
     const ld = document.getElementById('loadingStatus');
     try {
         ld.textContent = 'Lade Multi-Timeframe Daten...';
         await loadAllTimeframes();
+        ld.textContent = 'Lade Funding Daten...';
+        await fetchFundingData();
         ld.textContent = 'Analysiere Marktstruktur...';
         runAnalysis();
-        ld.textContent = 'Initialisiere Chart...';
+        ld.textContent = 'Initialisiere Charts...';
         initChart();
-        ld.textContent = 'Berechne Backtest...';
-        runQuickBacktest();
+        ld.textContent = 'Lade Session Stats...';
+        updateSessionStats();
         ld.textContent = 'Verbinde Live-Feed...';
         connectWS();
         if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
         setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 800);
+        
+        // Periodic Refresh
         setInterval(refreshData, 5 * 60 * 1000);
+        setInterval(fetchFundingData, 60 * 1000); // Funding jede Minute aktualisieren
+        setInterval(() => {
+            detectSession();
+            updateFundingUI(); // Countdown aktualisieren
+        }, 1000); // Jede Sekunde für Countdown und Session-Check
+        
     } catch (err) { ld.textContent = 'Fehler: ' + err.message; console.error(err); }
 }
 
