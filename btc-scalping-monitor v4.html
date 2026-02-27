@@ -960,7 +960,7 @@ const STATE = {
     activeSignal: null,
     signalHistory: [],
     signalCooldown: 0,
-    COOLDOWN_MS: 4 * 60 * 60 * 1000, // 4 Stunden Cooldown für höhere Qualität
+    COOLDOWN_MS: 15 * 60 * 1000, // 15 Minuten Cooldown
     signalCount: 0,
     btResults: null,
     
@@ -1554,7 +1554,7 @@ function closeModal() {
 function trackSignalOutcomes() {
     STATE.signalHistory.forEach(sig => {
         if (sig.status !== 'active') return;
-        if (Date.now() - sig.time > 24*60*60*1000) { sig.status = 'expired'; return; }
+        if (Date.now() - sig.time > 24*60*60*1000) { sig.status = 'expired'; return; } // 24h statt 4h
         if (sig.direction === 'long') { 
             if (STATE.price <= sig.sl) sig.status = 'sl'; 
             else if (STATE.price >= sig.tp2) sig.status = 'tp2'; 
@@ -1584,9 +1584,10 @@ function showToast(dir, quality, entry, sl, tp1, reasons) {
 }
 
 // ============================================================
-// CHART WITH ZOOM & PAN
+// CHART WITH ZOOM & PAN - KORRIGIERT
 // ============================================================
 function getTimeUnit(tf) {
+    // Bestimme die passende Zeit-Unit basierend auf Timeframe
     if (tf.includes('m')) return 'minute';
     if (tf.includes('h') || tf.includes('H')) return 'hour';
     if (tf.includes('d') || tf.includes('D')) return 'day';
@@ -1607,6 +1608,7 @@ function buildAnnotations() {
     const annotations = {};
     let aid = 0;
 
+    // FVG zones
     if (STATE.overlays.fvg) {
         STATE.fvgs.filter(f => f.status !== 'filled').slice(-6).forEach(f => {
             annotations['fvg' + aid++] = {
@@ -1630,6 +1632,7 @@ function buildAnnotations() {
         });
     }
 
+    // Order Block zones
     if (STATE.overlays.ob) {
         STATE.orderBlocks.slice(-4).forEach(ob => {
             annotations['ob' + aid++] = {
@@ -1652,6 +1655,7 @@ function buildAnnotations() {
         });
     }
 
+    // MSS / BOS markers
     if (STATE.overlays.mss) {
         [...STATE.mssEvents.slice(-6), ...STATE.bosEvents.slice(-6)].forEach(ev => {
             const isMSS = ev.type.startsWith('MSS');
@@ -1677,13 +1681,15 @@ function buildAnnotations() {
         });
     }
 
+    // Liquidity levels
     if (STATE.overlays.liq) {
         STATE.liquidityLevels.slice(0, 4).forEach(l => {
+            const above = l.price > STATE.price;
             annotations['liq' + aid++] = {
                 type: 'line',
                 yMin: l.price,
                 yMax: l.price,
-                borderColor: 'rgba(255,193,7,0.35)',
+                borderColor: above ? 'rgba(255,193,7,0.35)' : 'rgba(255,193,7,0.35)',
                 borderWidth: 1,
                 borderDash: [8, 4],
                 label: {
@@ -1714,6 +1720,7 @@ function initChart() {
 
     const datasets = [];
 
+    // Main price data
     if (STATE.chartType === 'candles') {
         datasets.push({
             label: 'BTC',
@@ -1737,6 +1744,7 @@ function initChart() {
         });
     }
 
+    // EMAs
     if (showEma) {
         datasets.push(
             { label: 'EMA 20', data: ema20.map((v, i) => ({ x: candles[i].t, y: v })), type: 'line', borderColor: 'rgba(0,230,118,0.8)', borderWidth: 1.5, pointRadius: 0, fill: false, order: 1 },
@@ -1782,17 +1790,38 @@ function initChart() {
                 },
                 annotation: { annotations: buildAnnotations() },
                 zoom: {
-                    pan: { enabled: true, mode: 'xy', modifierKey: null },
-                    zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy', drag: { enabled: false } },
-                    limits: { x: { min: 'original', max: 'original' }, y: { min: 'original', max: 'original' } }
+                    pan: {
+                        enabled: true,
+                        mode: 'xy',
+                        modifierKey: null,
+                    },
+                    zoom: {
+                        wheel: { enabled: true },
+                        pinch: { enabled: true },
+                        mode: 'xy',
+                    },
+                    limits: {
+                        x: { min: 'original', max: 'original' },
+                        y: { min: 'original', max: 'original' }
+                    }
                 }
             },
             scales: {
                 x: {
                     type: 'time',
-                    time: { unit: timeUnit, displayFormats: timeFormats, tooltipFormat: 'dd.MM.yyyy HH:mm' },
+                    time: { 
+                        unit: timeUnit,
+                        displayFormats: timeFormats,
+                        tooltipFormat: 'dd.MM.yyyy HH:mm'
+                    },
                     grid: { color: 'rgba(30,37,48,0.5)' },
-                    ticks: { color: '#444e5f', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+                    ticks: { 
+                        color: '#444e5f', 
+                        font: { family: 'JetBrains Mono', size: 9 }, 
+                        maxRotation: 0, 
+                        autoSkip: true, 
+                        maxTicksLimit: 8 
+                    }
                 },
                 y: {
                     position: 'right',
@@ -1803,6 +1832,7 @@ function initChart() {
         }
     });
     
+    // Doppelklick zum Zurücksetzen
     document.getElementById('mainChart').addEventListener('dblclick', () => {
         if (STATE.chart) STATE.chart.resetZoom();
     });
@@ -1815,12 +1845,14 @@ function updateChart() {
 
     const closes = candles.map(c => c.c);
 
+    // Update price dataset
     if (STATE.chartType === 'candles') {
         STATE.chart.data.datasets[0].data = candles.map(c => ({ x: c.t, o: c.o, h: c.h, l: c.l, c: c.c }));
     } else {
         STATE.chart.data.datasets[0].data = closes.map((c, i) => ({ x: candles[i].t, y: c }));
     }
 
+    // Update EMAs if shown
     if (STATE.overlays.ema && STATE.chart.data.datasets.length > 1) {
         const ema20 = calcEMA(closes, 20), ema50 = calcEMA(closes, 50), ema100 = calcEMA(closes, 100), ema200 = calcEMA(closes, 200);
         STATE.chart.data.datasets[1].data = ema20.map((v, i) => ({ x: candles[i].t, y: v }));
@@ -1829,7 +1861,9 @@ function updateChart() {
         STATE.chart.data.datasets[4].data = ema200.map((v, i) => ({ x: candles[i].t, y: v }));
     }
 
+    // Update annotations
     STATE.chart.options.plugins.annotation.annotations = buildAnnotations();
+
     STATE.chart.update('none');
 }
 
@@ -1926,6 +1960,7 @@ function runAnalysis() {
 // ============================================================
 // EVENT HANDLERS
 // ============================================================
+// Timeframe buttons
 document.querySelectorAll('.tf-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
         document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
@@ -1940,9 +1975,11 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
     });
 });
 
+// Chart type
 document.getElementById('btnLine').addEventListener('click', () => { STATE.chartType = 'line'; document.getElementById('btnLine').classList.add('active'); document.getElementById('btnCandles').classList.remove('active'); initChart(); });
 document.getElementById('btnCandles').addEventListener('click', () => { STATE.chartType = 'candles'; document.getElementById('btnCandles').classList.add('active'); document.getElementById('btnLine').classList.remove('active'); initChart(); });
 
+// Overlay toggles
 document.querySelectorAll('.toggle-chip').forEach(chip => {
     chip.addEventListener('click', () => {
         const key = chip.dataset.overlay;
@@ -1952,10 +1989,12 @@ document.querySelectorAll('.toggle-chip').forEach(chip => {
     });
 });
 
+// Modal schließen bei Klick außerhalb
 document.getElementById('signalModal').addEventListener('click', (e) => {
     if (e.target.id === 'signalModal') closeModal();
 });
 
+// Periodic refresh
 async function refreshData() {
     for (const tf of Object.keys(STATE.tfData)) {
         const data = await fetchCandles(tf, 500);
