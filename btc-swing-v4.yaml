@@ -1,0 +1,1038 @@
+# ============================================================
+# BTC SWING V4 - CLOUD NATIVE
+# Basierend auf: btc-scalping-monitor-v3-fixed.html
+# Migration: V3 JavaScript → Kimi Code Agents
+# ============================================================
+
+api_version: "kimi-code/v2"
+system_name: "btc-swing-v4-cloud"
+description: "Cloud-native BTC Swing Trading System"
+author: "Kimi K2.5 + User V3 Migration"
+created: "2025-02-28"
+
+# ============================================================
+# INFRASTRUCTURE
+# ============================================================
+
+infrastructure:
+  platform: "kimi_claw"
+  plan: "allegretto"
+  region: "eu-central"
+  
+  scaling:
+    min_agents: 7
+    max_agents: 10
+    auto_scale: true
+    scale_on: "cpu > 75% || memory > 80%"
+    
+  persistence:
+    type: "redis"
+    ttl: "7d"
+    
+  monitoring:
+    dashboard: true
+    log_level: "info"
+
+# ============================================================
+# DATA SOURCES (Aus Ihrem V3: fetchCandles())
+# ============================================================
+
+data_sources:
+  binance:
+    type: "websocket_rest_hybrid"
+    websocket: "wss://stream.binance.com:9443/ws/btcusdt@trade"
+    rest_api: "https://api.binance.com/api/v3/klines"
+    symbol: "BTCUSDT"
+    timeframes: ["5m", "15m", "30m", "1h", "2h", "4h"]
+    history_limit: 500
+    rate_limit: "1200_weight/minute"
+    reconnect_interval: 3000
+    fallback_enabled: true
+
+# ============================================================
+# AGENT DEFINITIONS (7 Agents = Ihre 7 Hauptfunktionen)
+# ============================================================
+
+agents:
+
+  # ---------------------------------------------------------
+  # AGENT 1: DATA COLLECTOR (Ihr fetchCandles + WebSocket)
+  # ---------------------------------------------------------
+  data_collector:
+    name: "market_data_feed"
+    type: "data_ingestion"
+    description: "Echtzeit-Marktdaten von Binance"
+    
+    inputs:
+      - source: "binance"
+        streams: ["trade", "kline"]
+        
+    processing:
+      - normalize_candles:
+          schema: ["t", "o", "h", "l", "c", "v"]
+      - validate_data:
+          max_gap_seconds: 60
+          
+    outputs:
+      - stream: "candles_{{timeframe}}"
+        schema:
+          t: "timestamp_ms"
+          o: "float"
+          h: "float"
+          l: "float"
+          c: "float"
+          v: "float"
+        retention: 500
+        ttl: 86400
+        
+      - stream: "live_price"
+        schema:
+          price: "float"
+          timestamp: "timestamp_ms"
+          change_24h: "float"
+          
+    health_check:
+      interval: 10
+      timeout: 30
+      on_failure: "restart_with_rest_fallback"
+
+  # ---------------------------------------------------------
+  # AGENT 2: MTF ANALYZER (Ihr analyzeMTFBias())
+  # ---------------------------------------------------------
+  mtf_analyzer:
+    name: "multi_timeframe_bias"
+    type: "technical_analysis"
+    description: "EMA-basierte Bias-Berechnung über 6 Timeframes"
+    
+    inputs:
+      - stream: "candles_{{timeframe}}"
+        from: "data_collector"
+        timeframes: ["5m", "15m", "30m", "1h", "2h", "4h"]
+        
+    config:
+      ema_periods: [20, 50, 100]
+      weights:
+        "4h": 4.0
+        "2h": 3.0
+        "1h": 2.5
+        "30m": 2.0
+        "15m": 1.5
+        "5m": 0.5
+        
+    logic: |
+      # Ihre ORIGINALE Logik aus V3, Zeile ~900-930:
+      
+      function calcEMA(data, period):
+        k = 2 / (period + 1)
+        ema = [data[0]]
+        for i from 1 to len(data)-1:
+          ema[i] = data[i] * k + ema[i-1] * (1 - k)
+        return ema
+      
+      for tf in config.timeframes:
+        candles = input.candles[tf]
+        closes = candles.map(c => c.c)
+        
+        # EMAs berechnen
+        ema20 = calcEMA(closes, 20)
+        ema50 = calcEMA(closes, 50)
+        ema100 = calcEMA(closes, 100)
+        
+        # Scoring (Ihre Logik)
+        score = 0
+        last_idx = len(closes) - 1
+        
+        # EMA Alignment
+        if ema20[last_idx] > ema50[last_idx] > ema100[last_idx]:
+          score += 4
+        elif ema20[last_idx] < ema50[last_idx] < ema100[last_idx]:
+          score -= 4
+          
+        # Price vs EMAs
+        price = closes[last_idx]
+        if price > ema20[last_idx]: score += 1
+        else: score -= 1
+        
+        if price > ema50[last_idx]: score += 1
+        else: score -= 1
+        
+        if price > ema100[last_idx]: score += 1
+        else: score -= 1
+        
+        # Bullish candle ratio (letzte 5)
+        recent_candles = candles[-5]
+        bull_count = count(recent_candles, c => c.c > c.o)
+        score += (bull_count - 2.5)
+        
+        # Strength & Bias
+        strength = min(100, abs(score / 10) * 100)
+        bias = score > 2 ? 'bullish' : score < -2 ? 'bearish' : 'neutral'
+        
+        result[tf] = {bias, strength, score}
+      
+      # HTF Bias (gewichtet)
+      total_score = 0
+      total_weight = 0
+      for tf, data in result:
+        total_score += data.score * config.weights[tf]
+        total_weight += config.weights[tf]
+        
+      htf_score = total_score / total_weight
+      htf_bias = htf_score > 1.5 ? 'BULLISH' : htf_score < -1.5 ? 'BEARISH' : 'NEUTRAL'
+      
+      return {
+        htf_bias: htf_bias,
+        tf_data: result,
+        timestamp: now()
+      }
+      
+    outputs:
+      - stream: "mtf_bias"
+        schema:
+          htf_bias: "enum[BULLISH, BEARISH, NEUTRAL]"
+          tf_scores: "map"
+          timestamp: "timestamp_ms"
+        publish_interval: 5000  # 5 Sekunden
+
+  # ---------------------------------------------------------
+  # AGENT 3: SMC DETECTOR (Ihr detectFVGs + detectOrderBlocks + detectMSSandBOS)
+  # ---------------------------------------------------------
+  smc_detector:
+    name: "smart_money_concepts"
+    type: "pattern_recognition"
+    description: "FVG, Order Blocks, MSS/BOS Detection"
+    
+    inputs:
+      - stream: "candles_{{timeframe}}"
+        primary_tf: "4h"  # Wie in Ihrem V3 Standard
+        
+    config:
+      fvg:
+        threshold: 0.0008  # 0.08% aus Ihrem Code
+        min_size_percent: 0.08
+        
+      order_block:
+        impulse_threshold: 0.002  # 0.2%
+        mitigation_lookback: 50
+        
+      swing_points:
+        lookback: 3  # Aus Ihrem Code
+        
+    sub_modules:
+    
+      # --- FVG Detection (Ihr detectFVGs, Zeile ~1020) ---
+      fvg_detector:
+        logic: |
+          fvgs = []
+          
+          for i from 2 to len(candles)-1:
+            p = candles[i-2]  # Pre-Candle
+            c = candles[i]    # Current
+            
+            # Bullish FVG
+            if c.l > p.h and (c.l - p.h) / p.h >= config.fvg.threshold:
+              fvgs.append({
+                type: 'bullish',
+                top: c.l,
+                bottom: p.h,
+                idx: i,
+                time: c.t,
+                status: 'open',
+                filled: 0
+              })
+              
+            # Bearish FVG
+            if c.h < p.l and (p.l - c.h) / p.l >= config.fvg.threshold:
+              fvgs.append({
+                type: 'bearish',
+                top: p.l,
+                bottom: c.h,
+                idx: i,
+                time: c.t,
+                status: 'open',
+                filled: 0
+              })
+          
+          # Fill-Status prüfen (Ihre Logik)
+          for fvg in fvgs:
+            for i from fvg.idx+1 to len(candles)-1:
+              c = candles[i]
+              
+              if fvg.type == 'bullish':
+                if c.l <= fvg.bottom:
+                  fvg.status = 'filled'
+                  fvg.filled = 1
+                  break
+                if c.l < fvg.top:
+                  fvg.filled = max(fvg.filled, (fvg.top - c.l) / (fvg.top - fvg.bottom))
+              else:
+                if c.h >= fvg.top:
+                  fvg.status = 'filled'
+                  fvg.filled = 1
+                  break
+                if c.h > fvg.bottom:
+                  fvg.filled = max(fvg.filled, (c.h - fvg.bottom) / (fvg.top - fvg.bottom))
+                  
+            if fvg.filled >= 0.7 and fvg.status != 'filled':
+              fvg.status = 'partial'
+              
+          # Nur offene behalten
+          return [f for f in fvgs if f.status != 'filled']
+          
+      # --- Order Block Detection (Ihr detectOrderBlocks, Zeile ~1050) ---
+      ob_detector:
+        logic: |
+          order_blocks = []
+          
+          for i from 2 to len(candles)-2:
+            c0 = candles[i-1]  # Vorherige
+            c1 = candles[i]    # Impuls
+            c2 = candles[i+1]  # Bestätigung
+            
+            # Bullish OB: Bearish → Bullish Impuls → Higher
+            if c0.c < c0.o and c1.c > c1.o and (c1.c - c1.o) / c1.o > config.order_block.impulse_threshold and c2.c > c1.h:
+              order_blocks.append({
+                type: 'bullish',
+                high: c0.h,
+                low: c0.l,
+                idx: i-1,
+                time: c0.t,
+                mitigated: false
+              })
+              
+            # Bearish OB: Bullish → Bearish Impuls → Lower
+            if c0.c > c0.o and c1.c < c1.o and (c1.o - c1.c) / c1.o > config.order_block.impulse_threshold and c2.c < c1.l:
+              order_blocks.append({
+                type: 'bearish',
+                high: c0.h,
+                low: c0.l,
+                idx: i-1,
+                time: c0.t,
+                mitigated: false
+              })
+          
+          # Mitigation check
+          for ob in order_blocks:
+            for i from ob.idx+3 to len(candles)-1:
+              if ob.type == 'bullish' and candles[i].l < ob.low:
+                ob.mitigated = true
+                break
+              if ob.type == 'bearish' and candles[i].h > ob.high:
+                ob.mitigated = true
+                break
+                
+          return [ob for ob in order_blocks if not ob.mitigated][-10:]
+          
+      # --- MSS/BOS Detection (Ihr detectMSSandBOS, Zeile ~990-1010) ---
+      structure_detector:
+        logic: |
+          # Swing Points (Ihr detectSwingPoints, Zeile ~960)
+          swings = []
+          lb = config.swing_points.lookback
+          
+          for i from lb to len(candles)-lb-1:
+            is_high = true
+            is_low = true
+            
+            for j from 1 to lb:
+              if candles[i].h <= candles[i-j].h or candles[i].h <= candles[i+j].h:
+                is_high = false
+              if candles[i].l >= candles[i-j].l or candles[i].l >= candles[i+j].l:
+                is_low = false
+                
+            if is_high:
+              swings.append({type: 'high', price: candles[i].h, index: i, time: candles[i].t})
+            if is_low:
+              swings.append({type: 'low', price: candles[i].l, index: i, time: candles[i].t})
+          
+          # MSS/BOS (Ihre Logik)
+          mss_events = []
+          bos_events = []
+          last_high = null
+          last_low = null
+          trend = 'neutral'
+          
+          for sw in swings:
+            if sw.type == 'high':
+              if last_high:
+                if sw.price > last_high.price:
+                  if trend == 'bearish':
+                    mss_events.append({type: 'MSS_BULL', price: sw.price, time: sw.time, index: sw.index})
+                  else:
+                    bos_events.append({type: 'BOS_BULL', price: sw.price, time: sw.time, index: sw.index})
+                  trend = 'bullish'
+                elif trend == 'bullish':
+                  mss_events.append({type: 'MSS_BEAR', price: sw.price, time: sw.time, index: sw.index})
+                  trend = 'bearish'
+              last_high = sw
+            else:
+              if last_low:
+                if sw.price < last_low.price:
+                  if trend == 'bullish':
+                    mss_events.append({type: 'MSS_BEAR', price: sw.price, time: sw.time, index: sw.index})
+                  else:
+                    bos_events.append({type: 'BOS_BEAR', price: sw.price, time: sw.time, index: sw.index})
+                  trend = 'bearish'
+                elif trend == 'bearish':
+                  mss_events.append({type: 'MSS_BULL', price: sw.price, time: sw.time, index: sw.index})
+                  trend = 'bullish'
+              last_low = sw
+              
+          return {
+            swing_points: swings,
+            mss_events: mss_events,
+            bos_events: bos_events,
+            current_trend: trend,
+            last_swing_high: last_high,
+            last_swing_low: last_low
+          }
+          
+    outputs:
+      - stream: "smc_data"
+        schema:
+          fvgs: "list"
+          order_blocks: "list"
+          market_structure: "object"
+        publish_interval: 10000  # 10 Sekunden
+
+  # ---------------------------------------------------------
+  # AGENT 4: WYCKOFF ANALYZER (Ihr analyzeWyckoff, Zeile ~1100)
+  # ---------------------------------------------------------
+  wyckoff_analyzer:
+    name: "wyckoff_phase_detector"
+    type: "advanced_analysis"
+    description: "Wyckoff Accumulation/Distribution Phasen"
+    
+    inputs:
+      - stream: "candles_1h"  # Primär wie in Ihrem Code
+      - stream: "candles_30m"  # Fallback
+        
+    config:
+      lookback: 80
+      range_threshold: 0.08  # 8%
+      vol_spike_threshold: 1.3
+      
+    logic: |
+      # Daten wählen (1h bevorzugt, sonst 30m)
+      data = input.candles_1h if len(input.candles_1h) > 60 else input.candles_30m
+      
+      if len(data) < 60:
+        return {phase: 'none', subPhase: '', confidence: 0}
+        
+      recent = data[-80:]
+      highs = recent.map(d => d.h)
+      lows = recent.map(d => d.l)
+      closes = recent.map(d => d.c)
+      vols = recent.map(d => d.v)
+      
+      max_h = max(highs)
+      min_l = min(lows)
+      range_size = max_h - min_l
+      
+      if range_size == 0:
+        return {phase: 'none', subPhase: '', confidence: 0}
+        
+      last = closes[-1]
+      position = (last - min_l) / range_size
+      
+      avg_vol = sum(vols) / len(vols)
+      recent_vol = sum(vols[-5:]) / 5
+      vol_ratio = recent_vol / avg_vol
+      
+      is_range = range_size / min_l < config.range_threshold
+      
+      # Phase Detection (Ihre komplette Logik)
+      phase = 'none'
+      sub = ''
+      conf = 0
+      
+      prev_close = closes[-2]
+      prev2_close = closes[-3]
+      rev_up = last > prev_close and prev_close < prev2_close
+      rev_down = last < prev_close and prev_close > prev2_close
+      
+      if is_range:
+        # Accumulation
+        if position < 0.15 and vol_ratio > 1.3 and rev_up:
+          phase = 'accumulation'
+          sub = 'Spring'
+          conf = min(90, vol_ratio * 40)
+        elif position < 0.2 and vol_ratio < 1.0 and rev_up:
+          phase = 'accumulation'
+          sub = 'Test'
+          conf = 50
+        elif position > 0.85 and vol_ratio > 1.2:
+          phase = 'accumulation'
+          sub = 'SOS'
+          conf = min(80, vol_ratio * 35)
+        # Distribution  
+        elif position > 0.85 and vol_ratio > 1.3 and rev_down:
+          phase = 'distribution'
+          sub = 'Upthrust'
+          conf = min(90, vol_ratio * 40)
+        elif position > 0.8 and vol_ratio < 1.0 and rev_down:
+          phase = 'distribution'
+          sub = 'LPSY'
+          conf = 50
+        elif position < 0.15 and vol_ratio > 1.2:
+          phase = 'distribution'
+          sub = 'SOW'
+          conf = min(80, vol_ratio * 35)
+        # Range
+        elif position < 0.4:
+          phase = 'accumulation'
+          sub = 'Range'
+          conf = 30
+        elif position > 0.6:
+          phase = 'distribution'
+          sub = 'Range'
+          conf = 30
+          
+      return {
+        phase: phase,
+        subPhase: sub,
+        confidence: conf,
+        posInRange: position,
+        volRatio: vol_ratio,
+        isRange: is_range
+      }
+      
+    outputs:
+      - stream: "wyckoff"
+        schema:
+          phase: "enum[accumulation, distribution, none]"
+          subPhase: "string"
+          confidence: "integer"
+          posInRange: "float"
+          volRatio: "float"
+          isRange: "boolean"
+        publish_interval: 30000  # 30 Sekunden
+
+  # ---------------------------------------------------------
+  # AGENT 5: SIGNAL GENERATOR (Ihr generateSignals, Zeile ~1180) - MASTER
+  # ---------------------------------------------------------
+  signal_generator:
+    name: "confluence_signal_engine"
+    type: "decision_engine"
+    description: "Haupt-Signal-Generierung mit Confluence-Scoring"
+    
+    inputs:
+      - stream: "mtf_bias"
+      - stream: "smc_data"
+      - stream: "wyckoff"
+      - stream: "live_price"
+      - stream: "candles_{{primary_tf}}"  # Für ATR
+      
+    config:
+      primary_tf: "4h"  # Wie in Ihrem V3 Standard
+      min_score: 5
+      cooldown_ms: 180000  # 3 Minuten aus Ihrem Code
+      
+      score_weights:
+        htf_bias: 2.0
+        fvg_entry: 2.0
+        order_block: 1.5
+        mss: 2.0
+        wyckoff: 2.0
+        liquidity_sweep: 1.5
+        volume_confirm: 1.0
+        
+      risk_management:
+        atr_period: 14
+        atr_mult_sl: 1.5
+        atr_mult_tp1: 2.0
+        atr_mult_tp2: 3.5
+        min_rr: 1.5
+        
+    state:
+      last_signal_time: 0
+      active_signal: null
+      signal_history: []
+      signal_count: 0
+      
+    logic: |
+      # Cooldown prüfen
+      now = current_timestamp()
+      if now - state.last_signal_time < config.cooldown_ms:
+        return null
+        
+      price = input.live_price.price
+      candles = input.candles[config.primary_tf]
+      
+      # ATR berechnen (Ihr calcATR, Zeile ~880)
+      function calcATR(candles, period=14):
+        atr = []
+        for i from 0 to len(candles)-1:
+          if i == 0:
+            tr = candles[i].h - candles[i].l
+          else:
+            tr = max(
+              candles[i].h - candles[i].l,
+              abs(candles[i].h - candles[i-1].c),
+              abs(candles[i].l - candles[i-1].c)
+            )
+          if i < period:
+            atr[i] = tr
+          else:
+            atr[i] = (atr[i-1] * (period - 1) + tr) / period
+        return atr
+        
+      atr = calcATR(candles, config.risk_management.atr_period)
+      atr_val = atr[-1]
+      
+      # --- SCORING (Ihre komplette Logik) ---
+      long_score = 0
+      short_score = 0
+      long_reasons = []
+      short_reasons = []
+      
+      # 1. HTF Bias (Ihre Logik)
+      if input.mtf_bias.htf_bias == 'BULLISH':
+        long_score += config.score_weights.htf_bias
+        long_reasons.append('HTF Bullish')
+      elif input.mtf_bias.htf_bias == 'BEARISH':
+        short_score += config.score_weights.htf_bias
+        short_reasons.append('HTF Bearish')
+        
+      # 2. FVG Entry (Ihre Logik)
+      near_bull_fvg = find_fvg(input.smc_data.fvgs, type='bullish', price=price, tolerance=0.003)
+      near_bear_fvg = find_fvg(input.smc_data.fvgs, type='bearish', price=price, tolerance=0.003)
+      
+      if near_bull_fvg:
+        long_score += config.score_weights.fvg_entry
+        long_reasons.append('In Bull FVG')
+      if near_bear_fvg:
+        short_score += config.score_weights.fvg_entry
+        short_reasons.append('In Bear FVG')
+        
+      # 3. Order Block (Ihre Logik)
+      near_bull_ob = find_ob(input.smc_data.order_blocks, type='bullish', price=price, tolerance=0.002)
+      near_bear_ob = find_ob(input.smc_data.order_blocks, type='bearish', price=price, tolerance=0.002)
+      
+      if near_bull_ob:
+        long_score += config.score_weights.order_block
+        long_reasons.append('Bull OB')
+      if near_bear_ob:
+        short_score += config.score_weights.order_block
+        short_reasons.append('Bear OB')
+        
+      # 4. MSS (Ihre Logik)
+      recent_mss = [m for m in input.smc_data.market_structure.mss_events if recent(m, 20)]
+      if recent_mss:
+        last_mss = recent_mss[-1]
+        if last_mss.type == 'MSS_BULL':
+          long_score += config.score_weights.mss
+          long_reasons.append('MSS Bullish')
+        elif last_mss.type == 'MSS_BEAR':
+          short_score += config.score_weights.mss
+          short_reasons.append('MSS Bearish')
+          
+      # Trend Bias (Ihre Logik)
+      if input.smc_data.market_structure.current_trend == 'bullish':
+        long_score += 0.5
+      elif input.smc_data.market_structure.current_trend == 'bearish':
+        short_score += 0.5
+        
+      # 5. Wyckoff (Ihre Logik)
+      wk = input.wyckoff
+      if wk.phase == 'accumulation' and wk.subPhase in ['Spring', 'Test', 'SOS']:
+        long_score += config.score_weights.wyckoff
+        long_reasons.append(f"WK {wk.subPhase}")
+      elif wk.phase == 'distribution' and wk.subPhase in ['Upthrust', 'LPSY', 'SOW']:
+        short_score += config.score_weights.wyckoff
+        short_reasons.append(f"WK {wk.subPhase}")
+        
+      # 6. Liquidity Sweep (Ihr detectLiquiditySweep, Zeile ~1280)
+      function detect_liquidity_sweep(candles):
+        if len(candles) < 30: return null
+        recent = candles[-10]
+        prev = candles[-30:-10]
+        if len(prev) < 10: return null
+        p_low = min(prev.map(c => c.l))
+        p_high = max(prev.map(c => c.h))
+        
+        if recent.some(c => c.l < p_low) and recent[-1].c > p_low:
+          return 'bull'
+        if recent.some(c => c.h > p_high) and recent[-1].c < p_high:
+          return 'bear'
+        return null
+        
+      sweep = detect_liquidity_sweep(candles)
+      if sweep == 'bull':
+        long_score += config.score_weights.liquidity_sweep
+        long_reasons.append('Liq Sweep')
+      elif sweep == 'bear':
+        short_score += config.score_weights.liquidity_sweep
+        short_reasons.append('Liq Sweep')
+        
+      # 7. Volume Confirm (Ihre Logik)
+      avg_vol = avg(candles[-20].map(c => c.v))
+      last_vol = candles[-1].v
+      vol_confirm = last_vol > avg_vol * 1.3
+      
+      if vol_confirm:
+        if candles[-1].c > candles[-1].o:
+          long_score += config.score_weights.volume_confirm
+          long_reasons.append('Vol ✓')
+        else:
+          short_score += config.score_weights.volume_confirm
+          short_reasons.append('Vol ✓')
+          
+      # --- SIGNAL GENERATION ---
+      direction = 'long' if long_score > short_score else 'short'
+      score = long_score if direction == 'long' else short_score
+      reasons = long_reasons if direction == 'long' else short_reasons
+      
+      if score >= config.min_score:
+        entry = price
+        sl = entry - atr_val * config.risk_management.atr_mult_sl if direction == 'long' else entry + atr_val * config.risk_management.atr_mult_sl
+        tp1 = entry + atr_val * config.risk_management.atr_mult_tp1 if direction == 'long' else entry - atr_val * config.risk_management.atr_mult_tp1
+        tp2 = entry + atr_val * config.risk_management.atr_mult_tp2 if direction == 'long' else entry - atr_val * config.risk_management.atr_mult_tp2
+        rr = abs(tp1 - entry) / abs(entry - sl)
+        
+        # Qualität (Ihre Logik)
+        quality = 'A+' if score >= 8 else 'B' if score >= 6 else 'C'
+        
+        signal = {
+          direction: direction,
+          entry: entry,
+          sl: sl,
+          tp1: tp1,
+          tp2: tp2,
+          rr: rr,
+          quality: quality,
+          score: score,
+          reasons: reasons,
+          timestamp: now,
+          status: 'active',
+          timeframe: config.primary_tf
+        }
+        
+        # State updaten
+        state.last_signal_time = now
+        state.active_signal = signal
+        state.signal_history.append(signal)
+        state.signal_count += 1
+        
+        # Zu Redis speichern
+        redis.set('signal:active', signal)
+        redis.lpush('signal:history', signal)
+        redis.ltrim('signal:history', 0, 49)  # Max 50
+        
+        return signal
+        
+      return null
+      
+    outputs:
+      - stream: "signals"
+        schema:
+          direction: "enum[long, short]"
+          entry: "float"
+          sl: "float"
+          tp1: "float"
+          tp2: "float"
+          rr: "float"
+          quality: "enum[A+, B, C]"
+          score: "float"
+          reasons: "list"
+          status: "enum[active, tp1, tp2, sl, expired]"
+          timestamp: "timestamp_ms"
+        on_publish: "broadcast_to_alert_manager"
+
+  # ---------------------------------------------------------
+  # AGENT 6: PERFORMANCE TRACKER (Ihr trackSignalOutcomes, Zeile ~1380)
+  # ---------------------------------------------------------
+  performance_tracker:
+    name: "signal_outcome_monitor"
+    type: "analytics"
+    description: "Überwacht Signal-Ergebnisse und berechnet Stats"
+    
+    inputs:
+      - stream: "signals"
+      - stream: "live_price"
+        
+    config:
+      check_interval: 5000  # 5 Sekunden
+      max_hold_time: 14400000  # 4 Stunden (Ihr Code)
+      
+    state:
+      active_signals: []
+      closed_signals: []
+      
+    logic: |
+      now = current_timestamp()
+      
+      for signal in state.active_signals:
+        if signal.status != 'active':
+          continue
+          
+        # Timeout-Check (Ihre Logik)
+        if now - signal.timestamp > config.max_hold_time:
+          signal.status = 'expired'
+          signal.pnl = 0
+          state.closed_signals.append(signal)
+          continue
+          
+        price = input.live_price.price
+        
+        # Long-Checks (Ihre Logik)
+        if signal.direction == 'long':
+          if price <= signal.sl:
+            signal.status = 'sl'
+            signal.pnl = -1  # -1R
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+          elif price >= signal.tp2:
+            signal.status = 'tp2'
+            signal.pnl = 3.5  # +3.5R
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+          elif price >= signal.tp1:
+            signal.status = 'tp1'
+            signal.pnl = 2.0  # +2R
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+            
+        # Short-Checks
+        else:
+          if price >= signal.sl:
+            signal.status = 'sl'
+            signal.pnl = -1
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+          elif price <= signal.tp2:
+            signal.status = 'tp2'
+            signal.pnl = 3.5
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+          elif price <= signal.tp1:
+            signal.status = 'tp1'
+            signal.pnl = 2.0
+            signal.close_price = price
+            signal.close_time = now
+            state.closed_signals.append(signal)
+            
+      # Stats berechnen (Ihre Logik)
+      closed = [s for s in state.closed_signals if s.status in ['tp1', 'tp2', 'sl']]
+      
+      stats = {
+        total_signals: len(state.closed_signals),
+        active_signals: len([s for s in state.active_signals if s.status == 'active']),
+        closed_count: len(closed),
+        win_rate: 0,
+        profit_factor: 0,
+        total_pnl: 0,
+        avg_pnl: 0,
+        max_drawdown: 0
+      }
+      
+      if closed:
+        wins = [s for s in closed if s.status in ['tp1', 'tp2']]
+        losses = [s for s in closed if s.status == 'sl']
+        
+        stats.win_rate = len(wins) / len(closed) * 100
+        stats.total_pnl = sum(s.pnl for s in closed)
+        stats.avg_pnl = stats.total_pnl / len(closed)
+        
+        gross_profit = sum(s.pnl for s in wins)
+        gross_loss = abs(sum(s.pnl for s in losses))
+        stats.profit_factor = gross_profit / gross_loss if gross_loss > 0 else 999
+        
+        # Max Drawdown (einfach)
+        equity = 10000
+        max_eq = equity
+        max_dd = 0
+        for s in closed:
+          equity += equity * 0.01 * s.pnl  # 1% Risk pro Trade
+          max_eq = max(max_eq, equity)
+          dd = (max_eq - equity) / max_eq
+          max_dd = max(max_dd, dd)
+        stats.max_drawdown = max_dd * 100
+        
+      return {
+        active: [s for s in state.active_signals if s.status == 'active'],
+        history: state.closed_signals[-20:],  # Letzte 20
+        stats: stats,
+        timestamp: now
+      }
+      
+    outputs:
+      - stream: "performance"
+        schema:
+          stats: "object"
+          active_signals: "list"
+          history: "list"
+        publish_interval: 10000  # 10 Sekunden
+
+  # ---------------------------------------------------------
+  # AGENT 7: ALERT MANAGER (Ihre showToast + Notifications)
+  # ---------------------------------------------------------
+  alert_manager:
+    name: "notification_hub"
+    type: "output_router"
+    description: "Verteilt Alerts an alle Kanäle"
+    
+    inputs:
+      - stream: "signals"
+      - stream: "performance"
+      - stream: "mtf_bias"
+      - stream: "live_price"
+        
+    channels:
+    
+      # --- WebSocket Broadcast (an Ihr Frontend) ---
+      websocket:
+        enabled: true
+        endpoint: "/stream"
+        cors: "*"  # Vercel erlauben
+        
+        message_types:
+          signal_new:
+            event: "signal"
+            payload: "{{signal_object}}"
+            
+          signal_update:
+            event: "signal_update"
+            payload: "{{signal_status_change}}"
+            
+          price_tick:
+            event: "price"
+            payload: "{{live_price}}"
+            throttle: 1000  # Max 1/s
+            
+          mtf_update:
+            event: "mtf_bias"
+            payload: "{{mtf_data}}"
+            throttle: 5000
+            
+          structure_update:
+            event: "structure"
+            payload: "{{smc_data}}"
+            throttle: 10000
+            
+          wyckoff_update:
+            event: "wyckoff"
+            payload: "{{wyckoff_data}}"
+            throttle: 30000
+            
+          performance_update:
+            event: "performance"
+            payload: "{{performance_stats}}"
+            throttle: 10000
+            
+      # --- Telegram (später optional) ---
+      telegram:
+        enabled: false  # JETZT: aus, SPÄTER: true
+        bot_token: "${TELEGRAM_BOT_TOKEN}"  # Später setzen
+        chat_id: "${TELEGRAM_CHAT_ID}"
+        
+        templates:
+          signal: |
+            🚨 {{direction}} SIGNAL ({{quality}})
+            
+            Entry: ${{entry}}
+            SL: ${{sl}} | TP1: ${{tp1}} | TP2: ${{tp2}}
+            R:R: 1:{{rr}}
+            
+            Score: {{score}}/12
+            Gründe: {{#reasons}}{{.}} {{/reasons}}
+            
+            ⏱ {{timestamp}}
+            
+          performance_daily: |
+            📊 Tages-Performance
+            
+            Signale: {{total_signals}}
+            Win Rate: {{win_rate}}%
+            Profit Factor: {{profit_factor}}
+            Total P&L: {{total_pnl}}R
+            
+      # --- Logging ---
+      logger:
+        enabled: true
+        level: "info"
+        retention: "7d"
+
+# ============================================================
+# ORCHESTRATION & SCALING
+# ============================================================
+
+swarm:
+  mode: "parallel"
+  coordination: "dataflow"
+  
+  pipeline:
+    - stage: "ingestion"
+      agents: ["data_collector"]
+      parallel: true
+      
+    - stage: "analysis"
+      agents: ["mtf_analyzer", "smc_detector", "wyckoff_analyzer"]
+      parallel: true
+      depends_on: "ingestion"
+      
+    - stage: "decision"
+      agents: ["signal_generator"]
+      depends_on: "analysis"
+      
+    - stage: "monitoring"
+      agents: ["performance_tracker", "alert_manager"]
+      depends_on: "decision"
+
+scaling:
+  auto: true
+  min_instances: 1
+  max_instances: 2
+  scale_on: "cpu > 70% || queue_depth > 100"
+
+health_checks:
+  - agent: "data_collector"
+    interval: 30
+    timeout: 10
+    on_failure: "restart"
+    
+  - agent: "signal_generator"
+    interval: 60
+    timeout: 30
+    on_failure: "alert_admin"
+
+# ============================================================
+# MONITORING DASHBOARD
+# ============================================================
+
+monitoring:
+  url: "https://claw.kimi.ai/dashboard/btc-swing-v4"
+  
+  metrics:
+    - name: "signals_per_hour"
+      type: "counter"
+      
+    - name: "avg_signal_score"
+      type: "gauge"
+      
+    - name: "win_rate_24h"
+      type: "gauge"
+      
+    - name: "system_latency_ms"
+      type: "histogram"
+      
+    - name: "active_signals"
+      type: "gauge"
+      
+  alerts:
+    - condition: "no_signal > 6h"
+      severity: "warning"
+      action: "log"
+      
+    - condition: "error_rate > 5%"
+      severity: "critical"
+      action: "restart_agent"
+      
+    - condition: "binance_disconnected > 60s"
+      severity: "critical"
+      action: "switch_to_rest"
