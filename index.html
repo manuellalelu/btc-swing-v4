@@ -758,17 +758,13 @@
 
 <script>
 // ============================================================
-// CLOUD WEBSOCKET CLIENT
-// Verbindet zu Kimi Claw Backend
+// KONFIGURATION - HIER IST DIE WEBSOCKET URL EINGETRAGEN
 // ============================================================
 
 const CONFIG = {
-    // Kimi Claw WebSocket Endpoint (wird nach Deploy bekannt)
-    WS_URL: 'wss://claw.kimi.ai/agents/btc-swing-v4/stream',
-    
-    // Fallback: REST API Polling (falls WS nicht verfügbar)
-    REST_URL: 'https://claw.kimi.ai/agents/btc-swing-v4',
-    POLL_INTERVAL: 5000,
+    // KIMI CLAW WEBSOCKET URL (AUTOMATISCH EINGETRAGEN)
+    WS_URL: 'ws://47.84.12.26:8080/stream',
+    REST_URL: 'http://47.84.12.26:8080',
     
     // Audio Alerts
     SOUNDS: {
@@ -812,7 +808,7 @@ function connectWebSocket() {
             console.log('✅ Connected to Kimi Claw');
             updateConnection('connected');
             document.getElementById('loadingOverlay').classList.add('hidden');
-            document.getElementById('cloudStatus').textContent = '✅ Verbunden zu Cloud';
+            document.getElementById('cloudStatus').textContent = '✅ Verbunden zu Cloud (47.84.12.26:8080)';
         };
         
         STATE.ws.onmessage = (event) => {
@@ -834,8 +830,7 @@ function connectWebSocket() {
     } catch (err) {
         console.error('Connection failed:', err);
         updateConnection('error');
-        // Fallback zu REST Polling
-        startRestPolling();
+        document.getElementById('loadingStatus').textContent = 'Verbindung fehlgeschlagen. Retry...';
     }
 }
 
@@ -876,7 +871,7 @@ function handleMessage(msg) {
 }
 
 // ============================================================
-// UI UPDATES (Ihre bestehenden Funktionen, angepasst)
+// UI UPDATES
 // ============================================================
 
 function updatePrice(data) {
@@ -897,13 +892,11 @@ function updatePrice(data) {
 function updateMTF(data) {
     STATE.data.mtfBias = data;
     
-    // HTF Bias
     const htf = document.getElementById('htfBias');
     htf.textContent = data.htf_bias;
     htf.style.color = data.htf_bias === 'BULLISH' ? 'var(--long)' : 
                       data.htf_bias === 'BEARISH' ? 'var(--short)' : 'var(--text-2)';
     
-    // MTF Bars
     const container = document.getElementById('mtfContainer');
     const tfs = ['5m', '15m', '30m', '1h', '2h', '4h'];
     
@@ -923,7 +916,6 @@ function updateMTF(data) {
         </div>`;
     }).join('');
     
-    // Confluence Check
     document.getElementById('cfHTF').textContent = data.htf_bias;
     document.getElementById('cfHTF').style.color = data.htf_bias === 'BULLISH' ? 'var(--long)' : 
                                                     data.htf_bias === 'BEARISH' ? 'var(--short)' : 'var(--text-3)';
@@ -932,7 +924,6 @@ function updateMTF(data) {
 function updateSMC(data) {
     STATE.data.smc = data;
     
-    // FVGs
     const fvgList = document.getElementById('fvgList');
     document.getElementById('fvgCount').textContent = data.fvgs.length;
     
@@ -951,7 +942,6 @@ function updateSMC(data) {
         }).join('');
     }
     
-    // Order Blocks
     const obList = document.getElementById('obList');
     document.getElementById('obCount').textContent = data.orderBlocks.length;
     
@@ -966,7 +956,6 @@ function updateSMC(data) {
         ).join('');
     }
     
-    // Market Structure
     const ms = data.marketStructure;
     document.getElementById('structureList').innerHTML = `
         <div class="structure-item">
@@ -983,7 +972,6 @@ function updateSMC(data) {
         </div>
     `;
     
-    // Confluence
     const lastMSS = ms.mss_events[ms.mss_events.length - 1];
     document.getElementById('cfMSS').textContent = lastMSS ? lastMSS.type.replace('_', ' ') : ms.current_trend.toUpperCase();
     document.getElementById('cfMSS').style.color = (lastMSS && lastMSS.type.includes('BULL')) || ms.current_trend === 'bullish' ? 'var(--long)' : 
@@ -1031,7 +1019,6 @@ function updateWyckoff(data) {
     confEl.textContent = data.confidence ? data.confidence + '%' : '--';
     confEl.style.color = data.confidence > 70 ? 'var(--long)' : data.confidence > 40 ? 'var(--warn)' : 'var(--text-2)';
     
-    // Wyckoff Bar
     const phases = {'Range': 'A', 'Spring': 'C', 'Test': 'C', 'SOS': 'D', 'Upthrust': 'C', 'LPSY': 'C', 'SOW': 'D'};
     const activePhase = phases[data.subPhase] || 'A';
     
@@ -1041,7 +1028,6 @@ function updateWyckoff(data) {
         if (data.phase !== 'none' && el.dataset.p === activePhase) el.classList.add('current');
     });
     
-    // Confluence
     document.getElementById('cfWyckoff').textContent = data.subPhase || '--';
     document.getElementById('cfWyckoff').style.color = data.phase === 'accumulation' ? 'var(--long)' : 
                                                         data.phase === 'distribution' ? 'var(--short)' : 'var(--text-3)';
@@ -1077,13 +1063,9 @@ function handleSignal(signal) {
     
     document.getElementById('signalCount').textContent = (parseInt(document.getElementById('signalCount').textContent) + 1);
     
-    // Sound Alert
     playAlert(signal.quality);
-    
-    // Toast
     showToast(signal);
     
-    // Browser Notification
     if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(`${signal.direction.toUpperCase()} SIGNAL (${signal.quality})`, {
             body: `Entry: $${signal.entry.toFixed(0)} | SL: $${signal.sl.toFixed(0)} | TP: $${signal.tp1.toFixed(0)}`
@@ -1094,7 +1076,6 @@ function handleSignal(signal) {
 function updateSignalStatus(update) {
     if (STATE.data.signal && STATE.data.signal.timestamp === update.signal_timestamp) {
         STATE.data.signal.status = update.new_status;
-        // Update UI...
     }
 }
 
@@ -1112,10 +1093,8 @@ function updatePerformance(data) {
     document.getElementById('perfPnL').style.color = data.stats.total_pnl > 0 ? 'var(--long)' : data.stats.total_pnl < 0 ? 'var(--short)' : 'var(--text-2)';
     
     document.getElementById('perfAvgRR').textContent = data.stats.avg_pnl ? data.stats.avg_pnl.toFixed(2) + 'R' : '--';
-    
     document.getElementById('liveWinRate').textContent = data.stats.win_rate ? data.stats.win_rate.toFixed(0) + '%' : '--';
     
-    // History
     const histEl = document.getElementById('signalHistory');
     document.getElementById('histBadge').textContent = data.history.length;
     
@@ -1137,10 +1116,6 @@ function updatePerformance(data) {
         }).join('');
     }
 }
-
-// ============================================================
-// ALERTS & SOUNDS
-// ============================================================
 
 function playAlert(quality) {
     const soundUrl = quality === 'A+' ? CONFIG.SOUNDS.A_PLUS : 
@@ -1172,12 +1147,6 @@ function showToast(signal) {
 }
 
 // ============================================================
-// CHART (Ihr bestehender Chart-Code, angepasst)
-// ============================================================
-
-// ... (Chart-Initialisierung wie in Ihrem V3, aber mit Daten von WebSocket)
-
-// ============================================================
 // EVENT HANDLERS
 // ============================================================
 
@@ -1186,23 +1155,17 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
         document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         STATE.currentTF = btn.dataset.tf;
-        // Request new TF data via WS oder REST
-        if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
-            STATE.ws.send(JSON.stringify({action: 'change_tf', tf: STATE.currentTF}));
-        }
     });
 });
 
 document.getElementById('btnLine').addEventListener('click', function() {
     this.classList.add('active');
     document.getElementById('btnCandles').classList.remove('active');
-    // Chart-Typ wechseln
 });
 
 document.getElementById('btnCandles').addEventListener('click', function() {
     this.classList.add('active');
     document.getElementById('btnLine').classList.remove('active');
-    // Chart-Typ wechseln
 });
 
 document.querySelectorAll('.toggle-chip').forEach(chip => {
@@ -1210,7 +1173,6 @@ document.querySelectorAll('.toggle-chip').forEach(chip => {
         const key = chip.dataset.overlay;
         STATE.overlays[key] = !STATE.overlays[key];
         chip.classList.toggle('on', STATE.overlays[key]);
-        // Chart-Overlays aktualisieren
     });
 });
 
@@ -1219,16 +1181,12 @@ document.querySelectorAll('.toggle-chip').forEach(chip => {
 // ============================================================
 
 function init() {
-    // Notification Permission
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
     
-    // Connect to Cloud
     connectWebSocket();
-    
-    // Loading-Status aktualisieren
-    document.getElementById('loadingStatus').textContent = 'Warte auf Cloud-Daten...';
+    document.getElementById('loadingStatus').textContent = 'Verbinde zu 47.84.12.26:8080...';
 }
 
 window.addEventListener('load', init);
