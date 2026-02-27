@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC Swing V4 - Cloud Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Oxanium:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
+    <style>
+        :root {
+            --bg-0: #06080a;
+            --bg-1: #0c0f13;
+            --bg-2: #12161c;
+            --bg-3: #1a1f28;
+            --border: #1e2530;
+            --border-bright: #2a3140;
+            --text-0: #e8ecf1;
+            --text-1: #a0a8b8;
+            --text-2: #6b7588;
+            --text-3: #444e5f;
+            --accent: #f7931a;
+            --accent-dim: rgba(247, 147, 26, 0.15);
+            --long: #00e676;
+            --long-dim: rgba(0, 230, 118, 0.12);
+            --long-glow: rgba(0, 230, 118, 0.4);
+            --short: #ff1744;
+            --short-dim: rgba(255, 23, 68, 0.12);
+            --short-glow: rgba(255, 23, 68, 0.4);
+            --warn: #ffc107;
+            --info: #448aff;
+            --cloud: #00d4aa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-0);
+            color: var(--text-0);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-1); }
+        ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-1);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cloud-badge {
+            font-size: 8px;
+            padding: 2px 6px;
+            background: var(--cloud);
+            color: #000;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-2);
+        }
+
+        .conn-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-3);
+        }
+
+        .conn-dot.connected { background: var(--cloud); box-shadow: 0 0 8px var(--cloud); }
+        .conn-dot.connecting { background: var(--warn); animation: pulse 1s infinite; }
+        .conn-dot.error { background: var(--short); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .header-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .price-main {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-0);
+            letter-spacing: 1px;
+        }
+
+        .price-change {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 3px;
+        }
+
+        .price-up { background: var(--long-dim); color: var(--long); }
+        .price-down { background: var(--short-dim); color: var(--short); }
+
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-item { text-align: right; }
+        .stat-label {
+            font-size: 8px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .stat-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 290px 1fr 280px;
+            gap: 1px;
+            height: calc(100vh - 44px);
+            background: var(--border);
+        }
+
+        .col {
+            background: var(--bg-0);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel {
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+        }
+
+        .panel-title {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-3);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title .badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        .badge-live { background: var(--cloud); color: #000; }
+        .badge-cloud { background: var(--bg-3); color: var(--text-2); }
+
+        .signal-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 6px;
+            transition: all 0.3s;
+        }
+
+        .signal-card.active-long {
+            border-color: var(--long);
+            box-shadow: 0 0 20px var(--long-dim);
+        }
+
+        .signal-card.active-short {
+            border-color: var(--short);
+            box-shadow: 0 0 20px var(--short-dim);
+        }
+
+        .signal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .signal-direction {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .signal-quality {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+        }
+
+        .quality-a { background: var(--long); color: #000; }
+        .quality-b { background: var(--warn); color: #000; }
+        .quality-c { background: var(--text-3); color: var(--text-1); }
+        .quality-none { background: var(--bg-3); color: var(--text-3); }
+
+        .signal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 10px;
+        }
+
+        .signal-row .label { color: var(--text-2); }
+        .signal-row .value { font-weight: 500; color: var(--text-0); }
+        .signal-row .value.long { color: var(--long); }
+        .signal-row .value.short { color: var(--short); }
+        .signal-row .value.warn { color: var(--warn); }
+        .signal-row .value.cloud { color: var(--cloud); }
+
+        .chart-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chart-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: var(--bg-1);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .toolbar-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tf-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .tf-btn {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: 'Oxanium', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .tf-btn:hover { border-color: var(--text-3); color: var(--text-1); }
+        .tf-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+        .chart-toggles {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toggle-chip {
+            font-size: 9px;
+            color: var(--text-2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            padding: 3px 6px;
+            border-radius: 2px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .toggle-chip:hover { border-color: var(--border-bright); }
+        .toggle-chip.on { color: var(--text-0); border-color: var(--border-bright); background: var(--bg-3); }
+
+        .toggle-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .chart-type-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .chart-type-btn {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: 'Oxanium', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .chart-type-btn:hover { border-color: var(--text-3); color: var(--text-1); }
+        .chart-type-btn.active { background: var(--bg-3); color: var(--text-0); border-color: var(--text-2); }
+
+        .chart-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            background: var(--bg-0);
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .mtf-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 60px;
+            gap: 8px;
+            padding: 4px 0;
+            align-items: center;
+            font-size: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mtf-tf { font-weight: 600; color: var(--text-2); }
+
+        .mtf-bar-wrap {
+            height: 6px;
+            background: var(--bg-3);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mtf-bar-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: var(--text-3);
+        }
+
+        .mtf-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: all 0.5s;
+            position: absolute;
+            top: 0;
+        }
+
+        .fvg-item, .ob-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: var(--bg-2);
+            border-radius: 3px;
+            margin-bottom: 3px;
+            font-size: 10px;
+            border-left: 3px solid transparent;
+        }
+
+        .fvg-item.bull, .ob-item.bull { border-left-color: var(--long); }
+        .fvg-item.bear, .ob-item.bear { border-left-color: var(--short); }
+
+        .fvg-tag, .ob-tag {
+            font-size: 8px;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-open { background: var(--long-dim); color: var(--long); }
+        .tag-partial { background: rgba(255,193,7,0.15); color: var(--warn); }
+
+        .wyckoff-bar {
+            display: flex;
+            gap: 3px;
+            margin: 6px 0;
+        }
+
+        .wk-phase {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .wk-phase.active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-dim);
+        }
+
+        .wk-phase.current { animation: wk-pulse 1.5s infinite; }
+
+        @keyframes wk-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .structure-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-item {
+            display: grid;
+            grid-template-columns: 50px 1fr 60px 50px;
+            gap: 6px;
+            padding: 5px 8px;
+            background: var(--bg-2);
+            border-radius: 3px;
+            margin-bottom: 3px;
+            font-size: 9px;
+            align-items: center;
+        }
+
+        .cooldown-bar {
+            width: 100%;
+            height: 3px;
+            background: var(--bg-3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .cooldown-fill {
+            height: 100%;
+            background: var(--cloud);
+            transition: width 1s linear;
+        }
+
+        .cloud-info {
+            background: var(--bg-2);
+            border: 1px solid var(--cloud);
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 9px;
+            color: var(--cloud);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .loading-text {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 14px;
+            color: var(--cloud);
+            letter-spacing: 3px;
+            margin-top: 16px;
+        }
+
+        .loading-sub { font-size: 10px; color: var(--text-3); margin-top: 6px; }
+
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--cloud);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .alert-toast {
+            position: fixed;
+            top: 52px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px 14px;
+            min-width: 300px;
+            pointer-events: auto;
+            animation: slide-in 0.3s ease-out;
+            border-left: 3px solid;
+        }
+
+        .toast.long-toast { border-left-color: var(--long); }
+        .toast.short-toast { border-left-color: var(--short); }
+        .toast.cloud-toast { border-left-color: var(--cloud); }
+
+        @keyframes slide-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-title {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+
+        .toast-body { font-size: 10px; color: var(--text-2); line-height: 1.4; }
+        .toast-time { font-size: 8px; color: var(--text-3); margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">CLOUD CONNECT</div>
+    <div class="loading-sub" id="loadingStatus">Verbinde zu Kimi Claw...</div>
+</div>
+
+<div class="alert-toast" id="toastContainer"></div>
+
+<div class="header">
+    <div class="logo">
+        <div class="cloud-badge">V4 CLOUD</div>
+        BTC SWING
+    </div>
+    <div class="connection-status">
+        <div class="conn-dot" id="connDot"></div>
+        <span id="connText">Verbinden...</span>
+    </div>
+    <div class="header-price">
+        <span class="price-main" id="livePrice">--</span>
+        <span class="price-change" id="priceChange">0.00%</span>
+    </div>
+    <div class="header-stats">
+        <div class="stat-item">
+            <div class="stat-label">HTF Bias</div>
+            <div class="stat-value" id="htfBias" style="color:var(--text-2)">--</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Cloud Signals</div>
+            <div class="stat-value" id="signalCount" style="color:var(--cloud)">0</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="liveWinRate" style="color:var(--text-2)">--</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Wyckoff</div>
+            <div class="stat-value" id="headerWyckoff" style="color:var(--text-2)">--</div>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <!-- LEFT COLUMN -->
+    <div class="col">
+        <div class="panel">
+            <div class="cloud-info">
+                ☁️ Live-Daten von Kimi Claw Cloud<br>
+                <span id="cloudStatus">Verbindung wird hergestellt...</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Multi-Timeframe Bias <span class="badge badge-live">CLOUD</span></div>
+            <div id="mtfContainer"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Wyckoff Phase</div>
+            <div class="signal-row"><span class="label">Phase</span><span class="value" id="wkPhase">--</span></div>
+            <div class="signal-row"><span class="label">Sub-Phase</span><span class="value" id="wkSubPhase">--</span></div>
+            <div class="wyckoff-bar" id="wkBar">
+                <div class="wk-phase" data-p="A"></div>
+                <div class="wk-phase" data-p="B"></div>
+                <div class="wk-phase" data-p="C"></div>
+                <div class="wk-phase" data-p="D"></div>
+                <div class="wk-phase" data-p="E"></div>
+            </div>
+            <div class="signal-row"><span class="label">Confidence</span><span class="value" id="wkConf">--</span></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Fair Value Gaps <span class="badge badge-cloud" id="fvgCount">0</span></div>
+            <div id="fvgList"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Order Blocks <span class="badge badge-cloud" id="obCount">0</span></div>
+            <div id="obList"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Market Structure</div>
+            <div id="structureList"></div>
+        </div>
+    </div>
+
+    <!-- CENTER: CHART -->
+    <div class="col">
+        <div class="chart-area">
+            <div class="chart-toolbar">
+                <div class="toolbar-left">
+                    <div class="tf-group">
+                        <button class="tf-btn" data-tf="5m">5m</button>
+                        <button class="tf-btn" data-tf="15m">15m</button>
+                        <button class="tf-btn" data-tf="30m">30m</button>
+                        <button class="tf-btn" data-tf="1h">1h</button>
+                        <button class="tf-btn" data-tf="2h">2h</button>
+                        <button class="tf-btn active" data-tf="4h">4h</button>
+                    </div>
+                    <div class="chart-type-group">
+                        <button class="chart-type-btn" id="btnLine">Line</button>
+                        <button class="chart-type-btn active" id="btnCandles">Candles</button>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="chart-toggles">
+                        <div class="toggle-chip on" data-overlay="ema">
+                            <div class="toggle-dot" style="background:var(--long)"></div>EMA
+                        </div>
+                        <div class="toggle-chip on" data-overlay="fvg">
+                            <div class="toggle-dot" style="background:var(--accent)"></div>FVG
+                        </div>
+                        <div class="toggle-chip on" data-overlay="ob">
+                            <div class="toggle-dot" style="background:var(--info)"></div>OB
+                        </div>
+                        <div class="toggle-chip" data-overlay="mss">
+                            <div class="toggle-dot" style="background:#e040fb"></div>MSS
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col">
+        <div class="panel">
+            <div class="panel-title">Aktives Signal <span class="badge" id="signalBadge" style="background:var(--bg-3);color:var(--text-3)">CLOUD</span></div>
+            <div class="signal-card" id="activeSignalCard">
+                <div class="signal-card-header">
+                    <span class="signal-direction" id="sigDirection" style="color:var(--text-3)">WARTE...</span>
+                    <span class="signal-quality quality-none" id="sigQuality">--</span>
+                </div>
+                <div class="signal-row"><span class="label">Entry</span><span class="value" id="sigEntry">--</span></div>
+                <div class="signal-row"><span class="label">Stop Loss</span><span class="value short" id="sigSL">--</span></div>
+                <div class="signal-row"><span class="label">TP1</span><span class="value long" id="sigTP1">--</span></div>
+                <div class="signal-row"><span class="label">TP2</span><span class="value long" id="sigTP2">--</span></div>
+                <div class="signal-row"><span class="label">R:R</span><span class="value" id="sigRR">--</span></div>
+                <div class="signal-row"><span class="label">Score</span><span class="value" id="sigScore">--</span></div>
+                <div class="signal-row"><span class="label">Gründe</span><span class="value" id="sigReason" style="font-size:9px;">--</span></div>
+                <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Confluence Check</div>
+            <div class="signal-row"><span class="label">HTF Bias</span><span class="value" id="cfHTF">--</span></div>
+            <div class="signal-row"><span class="label">FVG Entry</span><span class="value" id="cfFVG">--</span></div>
+            <div class="signal-row"><span class="label">Order Block</span><span class="value" id="cfOB">--</span></div>
+            <div class="signal-row"><span class="label">MSS / BOS</span><span class="value" id="cfMSS">--</span></div>
+            <div class="signal-row"><span class="label">Wyckoff</span><span class="value" id="cfWyckoff">--</span></div>
+            <div class="signal-row"><span class="label">Liq Sweep</span><span class="value" id="cfLiq">--</span></div>
+            <div class="signal-row"><span class="label">Volume</span><span class="value" id="cfVol">--</span></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Performance <span class="badge badge-cloud">LIVE</span></div>
+            <div class="signal-row"><span class="label">Total Signals</span><span class="value cloud" id="perfTotal">0</span></div>
+            <div class="signal-row"><span class="label">Win Rate</span><span class="value" id="perfWinRate">--</span></div>
+            <div class="signal-row"><span class="label">Profit Factor</span><span class="value" id="perfPF">--</span></div>
+            <div class="signal-row"><span class="label">Total P&L (R)</span><span class="value" id="perfPnL">--</span></div>
+            <div class="signal-row"><span class="label">Avg R:R</span><span class="value" id="perfAvgRR">--</span></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Signal-Historie <span class="badge" id="histBadge" style="background:var(--bg-3);color:var(--text-2)">0</span></div>
+            <div id="signalHistory" style="max-height: 200px; overflow-y: auto;">
+                <div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">Warte auf Cloud-Daten...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// CLOUD WEBSOCKET CLIENT
+// Verbindet zu Kimi Claw Backend
+// ============================================================
+
+const CONFIG = {
+    // Kimi Claw WebSocket Endpoint (wird nach Deploy bekannt)
+    WS_URL: 'wss://claw.kimi.ai/agents/btc-swing-v4/stream',
+    
+    // Fallback: REST API Polling (falls WS nicht verfügbar)
+    REST_URL: 'https://claw.kimi.ai/agents/btc-swing-v4',
+    POLL_INTERVAL: 5000,
+    
+    // Audio Alerts
+    SOUNDS: {
+        A_PLUS: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg',
+        B: 'https://actions.google.com/sounds/v1/alarms/beep_medium.ogg',
+        C: 'https://actions.google.com/sounds/v1/alarms/beep_low.ogg'
+    }
+};
+
+// State
+const STATE = {
+    ws: null,
+    connected: false,
+    reconnectTimer: null,
+    data: {
+        price: 0,
+        priceChange: 0,
+        mtfBias: {},
+        wyckoff: {},
+        smc: {fvgs: [], orderBlocks: [], marketStructure: {}},
+        signal: null,
+        performance: {},
+        history: []
+    },
+    chart: null,
+    currentTF: '4h',
+    overlays: {ema: true, fvg: true, ob: true, mss: false}
+};
+
+// ============================================================
+// WEBSOCKET CONNECTION
+// ============================================================
+
+function connectWebSocket() {
+    updateConnection('connecting');
+    
+    try {
+        STATE.ws = new WebSocket(CONFIG.WS_URL);
+        
+        STATE.ws.onopen = () => {
+            console.log('✅ Connected to Kimi Claw');
+            updateConnection('connected');
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('cloudStatus').textContent = '✅ Verbunden zu Cloud';
+        };
+        
+        STATE.ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            handleMessage(msg);
+        };
+        
+        STATE.ws.onerror = (err) => {
+            console.error('WS Error:', err);
+            updateConnection('error');
+        };
+        
+        STATE.ws.onclose = () => {
+            console.log('⚠️ Disconnected, retrying...');
+            updateConnection('error');
+            STATE.reconnectTimer = setTimeout(connectWebSocket, 3000);
+        };
+        
+    } catch (err) {
+        console.error('Connection failed:', err);
+        updateConnection('error');
+        // Fallback zu REST Polling
+        startRestPolling();
+    }
+}
+
+function updateConnection(status) {
+    const dot = document.getElementById('connDot');
+    const text = document.getElementById('connText');
+    
+    dot.className = 'conn-dot ' + status;
+    text.textContent = status === 'connected' ? 'Cloud' : 
+                       status === 'connecting' ? 'Verbinden...' : 
+                       'Fehler';
+}
+
+function handleMessage(msg) {
+    switch(msg.type) {
+        case 'price':
+            updatePrice(msg.data);
+            break;
+        case 'mtf_bias':
+            updateMTF(msg.data);
+            break;
+        case 'smc_data':
+            updateSMC(msg.data);
+            break;
+        case 'wyckoff':
+            updateWyckoff(msg.data);
+            break;
+        case 'signal':
+            handleSignal(msg.data);
+            break;
+        case 'signal_update':
+            updateSignalStatus(msg.data);
+            break;
+        case 'performance':
+            updatePerformance(msg.data);
+            break;
+    }
+}
+
+// ============================================================
+// UI UPDATES (Ihre bestehenden Funktionen, angepasst)
+// ============================================================
+
+function updatePrice(data) {
+    STATE.data.price = data.price;
+    STATE.data.priceChange = data.change_24h || 0;
+    
+    document.getElementById('livePrice').textContent = '$' + data.price.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+    
+    const changeEl = document.getElementById('priceChange');
+    const change = data.change_24h || 0;
+    changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+    changeEl.className = 'price-change ' + (change >= 0 ? 'price-up' : 'price-down');
+}
+
+function updateMTF(data) {
+    STATE.data.mtfBias = data;
+    
+    // HTF Bias
+    const htf = document.getElementById('htfBias');
+    htf.textContent = data.htf_bias;
+    htf.style.color = data.htf_bias === 'BULLISH' ? 'var(--long)' : 
+                      data.htf_bias === 'BEARISH' ? 'var(--short)' : 'var(--text-2)';
+    
+    // MTF Bars
+    const container = document.getElementById('mtfContainer');
+    const tfs = ['5m', '15m', '30m', '1h', '2h', '4h'];
+    
+    container.innerHTML = tfs.map(tf => {
+        const d = data.tf_scores[tf] || {bias: 'neutral', strength: 0, score: 0};
+        const col = d.bias === 'bullish' ? 'var(--long)' : d.bias === 'bearish' ? 'var(--short)' : 'var(--text-3)';
+        const pct = Math.min(50, d.strength / 2);
+        const left = d.score > 0 ? '50%' : `${50 - pct}%`;
+        
+        return `<div class="mtf-row">
+            <span class="mtf-tf">${tf}</span>
+            <div class="mtf-bar-wrap">
+                <div class="mtf-bar-center"></div>
+                <div class="mtf-bar-fill" style="left:${left};width:${pct}%;background:${col}"></div>
+            </div>
+            <span style="color:${col};font-weight:600;text-align:right">${d.bias.toUpperCase().slice(0,4)}</span>
+        </div>`;
+    }).join('');
+    
+    // Confluence Check
+    document.getElementById('cfHTF').textContent = data.htf_bias;
+    document.getElementById('cfHTF').style.color = data.htf_bias === 'BULLISH' ? 'var(--long)' : 
+                                                    data.htf_bias === 'BEARISH' ? 'var(--short)' : 'var(--text-3)';
+}
+
+function updateSMC(data) {
+    STATE.data.smc = data;
+    
+    // FVGs
+    const fvgList = document.getElementById('fvgList');
+    document.getElementById('fvgCount').textContent = data.fvgs.length;
+    
+    if (!data.fvgs.length) {
+        fvgList.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine offenen FVGs</div>';
+    } else {
+        fvgList.innerHTML = data.fvgs.slice(-6).map(f => {
+            const dist = f.type === 'bullish' ? 
+                ((STATE.data.price - f.top) / STATE.data.price * 100).toFixed(2) : 
+                ((f.bottom - STATE.data.price) / STATE.data.price * 100).toFixed(2);
+            return `<div class="fvg-item ${f.type}">
+                <span>$${f.bottom.toFixed(0)} – $${f.top.toFixed(0)}</span>
+                <span style="color:var(--text-2)">${dist}%</span>
+                <span class="fvg-tag ${f.status === 'open' ? 'tag-open' : 'tag-partial'}">${f.status.toUpperCase()}</span>
+            </div>`;
+        }).join('');
+    }
+    
+    // Order Blocks
+    const obList = document.getElementById('obList');
+    document.getElementById('obCount').textContent = data.orderBlocks.length;
+    
+    if (!data.orderBlocks.length) {
+        obList.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine aktiven OBs</div>';
+    } else {
+        obList.innerHTML = data.orderBlocks.slice(-4).map(ob => 
+            `<div class="ob-item ${ob.type}">
+                <span>${ob.type === 'bullish' ? 'Bull' : 'Bear'} OB</span>
+                <span>$${ob.low.toFixed(0)} – $${ob.high.toFixed(0)}</span>
+            </div>`
+        ).join('');
+    }
+    
+    // Market Structure
+    const ms = data.marketStructure;
+    document.getElementById('structureList').innerHTML = `
+        <div class="structure-item">
+            <span style="color:var(--text-2)">Trend</span>
+            <span style="color:${ms.current_trend === 'bullish' ? 'var(--long)' : ms.current_trend === 'bearish' ? 'var(--short)' : 'var(--text-3)'}">${ms.current_trend.toUpperCase()}</span>
+        </div>
+        <div class="structure-item">
+            <span style="color:var(--text-2)">Last MSS</span>
+            <span>${ms.mss_events.length ? ms.mss_events[ms.mss_events.length-1].type : '--'}</span>
+        </div>
+        <div class="structure-item">
+            <span style="color:var(--text-2)">Swing H/L</span>
+            <span>${ms.last_swing_high ? '$' + ms.last_swing_high.price.toFixed(0) : '--'} / ${ms.last_swing_low ? '$' + ms.last_swing_low.price.toFixed(0) : '--'}</span>
+        </div>
+    `;
+    
+    // Confluence
+    const lastMSS = ms.mss_events[ms.mss_events.length - 1];
+    document.getElementById('cfMSS').textContent = lastMSS ? lastMSS.type.replace('_', ' ') : ms.current_trend.toUpperCase();
+    document.getElementById('cfMSS').style.color = (lastMSS && lastMSS.type.includes('BULL')) || ms.current_trend === 'bullish' ? 'var(--long)' : 
+                                                    (lastMSS && lastMSS.type.includes('BEAR')) || ms.current_trend === 'bearish' ? 'var(--short)' : 'var(--text-3)';
+    
+    document.getElementById('cfFVG').textContent = data.fvgs.some(f => f.type === 'bullish') ? '✓ BULL' : 
+                                                    data.fvgs.some(f => f.type === 'bearish') ? '✓ BEAR' : '--';
+    document.getElementById('cfFVG').style.color = data.fvgs.some(f => f.type === 'bullish') ? 'var(--long)' : 
+                                                    data.fvgs.some(f => f.type === 'bearish') ? 'var(--short)' : 'var(--text-3)';
+    
+    document.getElementById('cfOB').textContent = data.orderBlocks.some(ob => ob.type === 'bullish') ? '✓ BULL' : 
+                                                   data.orderBlocks.some(ob => ob.type === 'bearish') ? '✓ BEAR' : '--';
+    document.getElementById('cfOB').style.color = data.orderBlocks.some(ob => ob.type === 'bullish') ? 'var(--long)' : 
+                                                   data.orderBlocks.some(ob => ob.type === 'bearish') ? 'var(--short)' : 'var(--text-3)';
+}
+
+function updateWyckoff(data) {
+    STATE.data.wyckoff = data;
+    
+    const phaseEl = document.getElementById('wkPhase');
+    const subEl = document.getElementById('wkSubPhase');
+    const confEl = document.getElementById('wkConf');
+    const headerEl = document.getElementById('headerWyckoff');
+    
+    if (data.phase === 'accumulation') {
+        phaseEl.textContent = 'Akkumulation';
+        phaseEl.style.color = 'var(--long)';
+        headerEl.textContent = 'ACC ' + (data.subPhase || '');
+        headerEl.style.color = 'var(--long)';
+    } else if (data.phase === 'distribution') {
+        phaseEl.textContent = 'Distribution';
+        phaseEl.style.color = 'var(--short)';
+        headerEl.textContent = 'DIST ' + (data.subPhase || '');
+        headerEl.style.color = 'var(--short)';
+    } else {
+        phaseEl.textContent = 'Neutral';
+        phaseEl.style.color = 'var(--text-2)';
+        headerEl.textContent = '--';
+        headerEl.style.color = 'var(--text-2)';
+    }
+    
+    subEl.textContent = data.subPhase || '--';
+    subEl.style.color = data.phase !== 'none' ? (data.phase === 'accumulation' ? 'var(--long)' : 'var(--short)') : 'var(--text-2)';
+    
+    confEl.textContent = data.confidence ? data.confidence + '%' : '--';
+    confEl.style.color = data.confidence > 70 ? 'var(--long)' : data.confidence > 40 ? 'var(--warn)' : 'var(--text-2)';
+    
+    // Wyckoff Bar
+    const phases = {'Range': 'A', 'Spring': 'C', 'Test': 'C', 'SOS': 'D', 'Upthrust': 'C', 'LPSY': 'C', 'SOW': 'D'};
+    const activePhase = phases[data.subPhase] || 'A';
+    
+    document.querySelectorAll('#wkBar .wk-phase').forEach(el => {
+        el.classList.remove('active', 'current');
+        if (data.phase !== 'none' && el.dataset.p <= activePhase) el.classList.add('active');
+        if (data.phase !== 'none' && el.dataset.p === activePhase) el.classList.add('current');
+    });
+    
+    // Confluence
+    document.getElementById('cfWyckoff').textContent = data.subPhase || '--';
+    document.getElementById('cfWyckoff').style.color = data.phase === 'accumulation' ? 'var(--long)' : 
+                                                        data.phase === 'distribution' ? 'var(--short)' : 'var(--text-3)';
+}
+
+function handleSignal(signal) {
+    STATE.data.signal = signal;
+    
+    const card = document.getElementById('activeSignalCard');
+    card.className = `signal-card active-${signal.direction}`;
+    
+    document.getElementById('sigDirection').textContent = signal.direction.toUpperCase();
+    document.getElementById('sigDirection').style.color = signal.direction === 'long' ? 'var(--long)' : 'var(--short)';
+    
+    document.getElementById('sigQuality').textContent = signal.quality;
+    document.getElementById('sigQuality').className = `signal-quality ${signal.quality === 'A+' ? 'quality-a' : signal.quality === 'B' ? 'quality-b' : 'quality-c'}`;
+    
+    document.getElementById('sigEntry').textContent = '$' + signal.entry.toFixed(0);
+    document.getElementById('sigSL').textContent = '$' + signal.sl.toFixed(0);
+    document.getElementById('sigTP1').textContent = '$' + signal.tp1.toFixed(0);
+    document.getElementById('sigTP2').textContent = '$' + signal.tp2.toFixed(0);
+    
+    const rrEl = document.getElementById('sigRR');
+    rrEl.textContent = '1:' + signal.rr.toFixed(1);
+    rrEl.style.color = signal.rr >= 2 ? 'var(--long)' : signal.rr >= 1.5 ? 'var(--warn)' : 'var(--short)';
+    
+    document.getElementById('sigScore').textContent = signal.score.toFixed(1) + '/12';
+    document.getElementById('sigReason').textContent = signal.reasons.slice(0, 3).join(', ');
+    
+    document.getElementById('signalBadge').textContent = 'ACTIVE';
+    document.getElementById('signalBadge').style.background = signal.direction === 'long' ? 'var(--long-dim)' : 'var(--short-dim)';
+    document.getElementById('signalBadge').style.color = signal.direction === 'long' ? 'var(--long)' : 'var(--short)';
+    
+    document.getElementById('signalCount').textContent = (parseInt(document.getElementById('signalCount').textContent) + 1);
+    
+    // Sound Alert
+    playAlert(signal.quality);
+    
+    // Toast
+    showToast(signal);
+    
+    // Browser Notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(`${signal.direction.toUpperCase()} SIGNAL (${signal.quality})`, {
+            body: `Entry: $${signal.entry.toFixed(0)} | SL: $${signal.sl.toFixed(0)} | TP: $${signal.tp1.toFixed(0)}`
+        });
+    }
+}
+
+function updateSignalStatus(update) {
+    if (STATE.data.signal && STATE.data.signal.timestamp === update.signal_timestamp) {
+        STATE.data.signal.status = update.new_status;
+        // Update UI...
+    }
+}
+
+function updatePerformance(data) {
+    STATE.data.performance = data;
+    
+    document.getElementById('perfTotal').textContent = data.stats.total_signals;
+    document.getElementById('perfWinRate').textContent = data.stats.win_rate ? data.stats.win_rate.toFixed(0) + '%' : '--';
+    document.getElementById('perfWinRate').style.color = data.stats.win_rate >= 60 ? 'var(--long)' : data.stats.win_rate >= 45 ? 'var(--warn)' : 'var(--short)';
+    
+    document.getElementById('perfPF').textContent = data.stats.profit_factor ? data.stats.profit_factor.toFixed(1) : '--';
+    document.getElementById('perfPF').style.color = data.stats.profit_factor >= 1.5 ? 'var(--long)' : 'var(--warn)';
+    
+    document.getElementById('perfPnL').textContent = data.stats.total_pnl ? (data.stats.total_pnl > 0 ? '+' : '') + data.stats.total_pnl.toFixed(1) + 'R' : '--';
+    document.getElementById('perfPnL').style.color = data.stats.total_pnl > 0 ? 'var(--long)' : data.stats.total_pnl < 0 ? 'var(--short)' : 'var(--text-2)';
+    
+    document.getElementById('perfAvgRR').textContent = data.stats.avg_pnl ? data.stats.avg_pnl.toFixed(2) + 'R' : '--';
+    
+    document.getElementById('liveWinRate').textContent = data.stats.win_rate ? data.stats.win_rate.toFixed(0) + '%' : '--';
+    
+    // History
+    const histEl = document.getElementById('signalHistory');
+    document.getElementById('histBadge').textContent = data.history.length;
+    
+    if (data.history.length) {
+        histEl.innerHTML = data.history.slice(0, 20).map(sig => {
+            const time = new Date(sig.close_time || sig.timestamp).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+            const dc = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
+            let status = 'OPEN', sc = 'var(--warn)';
+            if (sig.status === 'tp1' || sig.status === 'tp2') { status = 'TP✓'; sc = 'var(--long)'; }
+            else if (sig.status === 'sl') { status = 'SL✗'; sc = 'var(--short)'; }
+            else if (sig.status === 'expired') { status = 'EXP'; sc = 'var(--text-3)'; }
+            
+            return `<div class="history-item">
+                <span style="color:${dc};font-weight:700">${sig.direction.toUpperCase()}</span>
+                <span style="color:var(--text-2)">$${sig.entry.toFixed(0)} | ${sig.quality}</span>
+                <span style="color:${sc};font-weight:600;text-align:right">${status}</span>
+                <span style="color:var(--text-3);text-align:right">${time}</span>
+            </div>`;
+        }).join('');
+    }
+}
+
+// ============================================================
+// ALERTS & SOUNDS
+// ============================================================
+
+function playAlert(quality) {
+    const soundUrl = quality === 'A+' ? CONFIG.SOUNDS.A_PLUS : 
+                     quality === 'B' ? CONFIG.SOUNDS.B : CONFIG.SOUNDS.C;
+    const audio = new Audio(soundUrl);
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log('Audio blocked:', e));
+}
+
+function showToast(signal) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${signal.direction}-toast`;
+    toast.innerHTML = `
+        <div class="toast-title" style="color:${signal.direction === 'long' ? 'var(--long)' : 'var(--short)'}">
+            ${signal.direction.toUpperCase()} SIGNAL (${signal.quality})
+        </div>
+        <div class="toast-body">
+            Entry: $${signal.entry.toFixed(0)} | SL: $${signal.sl.toFixed(0)} | TP: $${signal.tp1.toFixed(0)}<br>
+            ${signal.reasons.join(', ')}
+        </div>
+        <div class="toast-time">${new Date().toLocaleTimeString('de-DE')}</div>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 10000);
+}
+
+// ============================================================
+// CHART (Ihr bestehender Chart-Code, angepasst)
+// ============================================================
+
+// ... (Chart-Initialisierung wie in Ihrem V3, aber mit Daten von WebSocket)
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+
+document.querySelectorAll('.tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        STATE.currentTF = btn.dataset.tf;
+        // Request new TF data via WS oder REST
+        if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
+            STATE.ws.send(JSON.stringify({action: 'change_tf', tf: STATE.currentTF}));
+        }
+    });
+});
+
+document.getElementById('btnLine').addEventListener('click', function() {
+    this.classList.add('active');
+    document.getElementById('btnCandles').classList.remove('active');
+    // Chart-Typ wechseln
+});
+
+document.getElementById('btnCandles').addEventListener('click', function() {
+    this.classList.add('active');
+    document.getElementById('btnLine').classList.remove('active');
+    // Chart-Typ wechseln
+});
+
+document.querySelectorAll('.toggle-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const key = chip.dataset.overlay;
+        STATE.overlays[key] = !STATE.overlays[key];
+        chip.classList.toggle('on', STATE.overlays[key]);
+        // Chart-Overlays aktualisieren
+    });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+
+function init() {
+    // Notification Permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
+    // Connect to Cloud
+    connectWebSocket();
+    
+    // Loading-Status aktualisieren
+    document.getElementById('loadingStatus').textContent = 'Warte auf Cloud-Daten...';
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
