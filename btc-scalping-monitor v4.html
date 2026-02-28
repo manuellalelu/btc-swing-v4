@@ -35,10 +35,9 @@
             --info: #448aff;
             --volume-long: rgba(0, 230, 118, 0.3);
             --volume-short: rgba(255, 23, 68, 0.3);
-            --fib-0: rgba(255, 255, 255, 0.1);
-            --fib-382: rgba(255, 193, 7, 0.15);
-            --fib-618: rgba(0, 230, 118, 0.15);
-            --fib-786: rgba(255, 23, 68, 0.15);
+            --risky: #ff6d00;
+            --neutral: #ffd600;
+            --safe: #00c853;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -91,6 +90,39 @@
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .lang-switch {
+            display: flex;
+            gap: 2px;
+            background: var(--bg-2);
+            padding: 2px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-2);
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: 'Oxanium', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            color: #000;
         }
 
         .header-price {
@@ -151,9 +183,42 @@
             flex-direction: column;
         }
 
+        .col-content {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
         .panel {
             border-bottom: 1px solid var(--border);
+            background: var(--bg-0);
+            transition: all 0.3s;
+        }
+
+        .panel.dragging {
+            opacity: 0.5;
+            border: 1px dashed var(--accent);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px;
+            cursor: move;
+            background: var(--bg-1);
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .panel-header:hover {
+            background: var(--bg-2);
+            border-bottom-color: var(--border-bright);
+        }
+
+        .panel.minimized .panel-header {
+            border-bottom-color: transparent;
         }
 
         .panel-title {
@@ -163,13 +228,58 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             color: var(--text-3);
-            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
         }
 
-        .panel-title .badge {
+        .panel-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .panel-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            font-size: 10px;
+            transition: all 0.2s;
+        }
+
+        .panel-btn:hover {
+            background: var(--bg-3);
+            color: var(--text-0);
+        }
+
+        .panel-content {
+            padding: 10px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s;
+            max-height: 1000px;
+        }
+
+        .panel.minimized .panel-content {
+            max-height: 0;
+            padding: 0 10px;
+        }
+
+        .panel-placeholder {
+            border: 2px dashed var(--accent);
+            background: var(--accent-dim);
+            margin: 4px;
+            border-radius: 4px;
+            height: 40px;
+        }
+
+        .badge {
             font-family: 'JetBrains Mono', monospace;
             font-size: 8px;
             padding: 2px 6px;
@@ -180,6 +290,9 @@
         .badge-live { background: var(--long-dim); color: var(--long); }
         .badge-warn { background: rgba(255,193,7,0.15); color: var(--warn); }
         .badge-short { background: var(--short-dim); color: var(--short); }
+        .badge-risky { background: rgba(255,109,0,0.2); color: var(--risky); border: 1px solid var(--risky); }
+        .badge-neutral { background: rgba(255,214,0,0.2); color: var(--neutral); border: 1px solid var(--neutral); }
+        .badge-safe { background: rgba(0,200,83,0.2); color: var(--safe); border: 1px solid var(--safe); }
 
         .signal-card {
             background: var(--bg-2);
@@ -187,7 +300,7 @@
             border-radius: 4px;
             padding: 10px;
             margin-bottom: 6px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
             cursor: pointer;
         }
 
@@ -201,13 +314,13 @@
             box-shadow: 0 0 15px var(--short-dim);
         }
 
-        .signal-card.warning {
-            border-color: var(--warn);
-            box-shadow: 0 0 10px rgba(255,193,7,0.15);
-        }
+        .signal-card.risky { border-left: 3px solid var(--risky); }
+        .signal-card.neutral { border-left: 3px solid var(--neutral); }
+        .signal-card.safe { border-left: 3px solid var(--safe); }
 
         .signal-card:hover {
             border-color: var(--border-bright);
+            transform: translateX(2px);
         }
 
         .signal-card-header {
@@ -235,6 +348,9 @@
         .quality-a { background: var(--long); color: #000; }
         .quality-b { background: var(--warn); color: #000; }
         .quality-c { background: var(--text-3); color: var(--text-1); }
+        .quality-risky { background: var(--risky); color: #000; }
+        .quality-neutral { background: var(--neutral); color: #000; }
+        .quality-safe { background: var(--safe); color: #000; }
         .quality-none { background: var(--bg-3); color: var(--text-3); }
 
         .signal-row {
@@ -250,6 +366,9 @@
         .signal-row .value.short { color: var(--short); }
         .signal-row .value.warn { color: var(--warn); }
         .signal-row .value.dim { color: var(--text-2); }
+        .signal-row .value.risky { color: var(--risky); }
+        .signal-row .value.neutral { color: var(--neutral); }
+        .signal-row .value.safe { color: var(--safe); }
 
         .warning-text {
             color: var(--warn);
@@ -280,6 +399,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .toolbar-right {
@@ -313,6 +433,7 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .toggle-chip {
@@ -376,8 +497,17 @@
             cursor: crosshair;
         }
 
+        .chart-container-rsi {
+            height: 80px;
+            position: relative;
+            border-top: 1px solid var(--border);
+            background: var(--bg-0);
+            cursor: crosshair;
+            display: none;
+        }
+
         .chart-container-volume {
-            height: 100px;
+            height: 80px;
             position: relative;
             border-top: 1px solid var(--border);
             background: var(--bg-0);
@@ -391,15 +521,16 @@
 
         .chart-hint {
             position: absolute;
-            bottom: 108px;
-            left: 8px;
+            bottom: 4px;
+            right: 8px;
             font-size: 8px;
             color: var(--text-3);
             pointer-events: none;
             z-index: 10;
-            background: rgba(6,8,10,0.7);
-            padding: 2px 6px;
+            background: rgba(6,8,10,0.8);
+            padding: 4px 8px;
             border-radius: 3px;
+            border: 1px solid var(--border);
         }
 
         .fvg-item {
@@ -547,6 +678,52 @@
             transition: width 0.5s;
         }
 
+        .history-tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .history-tab {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text-2);
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 9px;
+            font-weight: 600;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .history-tab:hover { border-color: var(--text-3); color: var(--text-1); }
+        .history-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+        .history-filters {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--text-3);
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 8px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover { border-color: var(--text-2); color: var(--text-1); }
+        .filter-chip.active { background: var(--bg-3); color: var(--text-0); border-color: var(--text-2); }
+
         .history-item {
             display: grid;
             grid-template-columns: 50px 1fr 60px 50px;
@@ -567,9 +744,9 @@
             border-color: var(--border-bright);
         }
 
-        .history-item.warning {
-            border-left: 2px solid var(--warn);
-        }
+        .history-item.risky { border-left: 2px solid var(--risky); }
+        .history-item.neutral { border-left: 2px solid var(--neutral); }
+        .history-item.safe { border-left: 2px solid var(--safe); }
 
         .mtf-row {
             display: grid;
@@ -870,14 +1047,35 @@
 
         .pattern-bull { background: rgba(0,230,118,0.2); color: var(--long); border: 1px solid var(--long); }
         .pattern-bear { background: rgba(255,23,68,0.2); color: var(--short); border: 1px solid var(--short); }
+
+        .divergence-tag {
+            display: inline-block;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            margin-right: 4px;
+            font-weight: 600;
+            background: rgba(156, 39, 176, 0.2);
+            color: #ce93d8;
+            border: 1px solid #9c27b0;
+        }
+
+        @media (max-width: 1200px) {
+            .main { grid-template-columns: 260px 1fr 240px; }
+        }
+        
+        @media (max-width: 900px) {
+            .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+            .col { max-height: 50vh; }
+        }
     </style>
 </head>
 <body>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
-    <div class="loading-text">INITIALISIERUNG</div>
-    <div class="loading-sub" id="loadingStatus">Lade Marktdaten...</div>
+    <div class="loading-text" data-i18n="loading_title">INITIALISIERUNG</div>
+    <div class="loading-sub" id="loadingStatus" data-i18n="loading_market">Lade Marktdaten...</div>
 </div>
 
 <div class="alert-toast" id="toastContainer"></div>
@@ -888,36 +1086,43 @@
             <div class="modal-title" id="modalTitle">Signal Details</div>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Content injected via JS -->
-        </div>
+        <div class="modal-body" id="modalBody"></div>
     </div>
 </div>
 
 <div class="header">
     <div class="logo">
         <div class="logo-dot" id="wsStatus"></div>
-        BTC SCALPING MONITOR
+        <span data-i18n="app_title">BTC SCALPING MONITOR</span>
     </div>
+    
+    <div class="header-controls">
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLanguage('de')" id="btnDe">DE</button>
+            <button class="lang-btn" onclick="setLanguage('en')" id="btnEn">EN</button>
+        </div>
+    </div>
+    
     <div class="header-price">
         <span class="price-main" id="livePrice">--</span>
         <span class="price-change price-up" id="priceChange">0.00%</span>
     </div>
+    
     <div class="header-stats">
         <div class="stat-item">
-            <div class="stat-label">Funding</div>
+            <div class="stat-label" data-i18n="header_funding">Funding</div>
             <div class="stat-value" id="headerFunding" style="color:var(--text-2)">--</div>
         </div>
         <div class="stat-item">
-            <div class="stat-label">Open Interest</div>
+            <div class="stat-label" data-i18n="header_oi">Open Interest</div>
             <div class="stat-value" id="headerOI" style="color:var(--text-2)">--</div>
         </div>
         <div class="stat-item">
-            <div class="stat-label">Session</div>
+            <div class="stat-label" data-i18n="header_session">Session</div>
             <div class="stat-value" id="headerSession" style="color:var(--text-2)">--</div>
         </div>
         <div class="stat-item">
-            <div class="stat-label">HTF Bias</div>
+            <div class="stat-label" data-i18n="header_bias">HTF Bias</div>
             <div class="stat-value" id="htfBias" style="color:var(--text-2)">--</div>
         </div>
     </div>
@@ -925,92 +1130,8 @@
 
 <div class="main">
     <!-- LEFT COLUMN -->
-    <div class="col">
-        <div class="panel">
-            <div class="panel-title">Multi-Timeframe Bias <span class="badge badge-live">LIVE</span></div>
-            <div id="mtfContainer"></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Market Data <span class="badge badge-live">FUTURES</span></div>
-            <div class="funding-grid">
-                <div class="funding-cell">
-                    <div class="funding-label">Funding Rate</div>
-                    <div class="funding-value" id="fundingRate" style="color:var(--text-2)">--</div>
-                </div>
-                <div class="funding-cell">
-                    <div class="funding-label">Next Funding</div>
-                    <div class="funding-value" id="nextFunding" style="color:var(--text-2);font-size:11px">--</div>
-                </div>
-            </div>
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-                <div class="signal-row"><span class="label">Open Interest</span><span class="value" id="oiValue">--</span></div>
-                <div class="oi-bar"><div class="oi-fill" id="oiFill" style="width:0%"></div></div>
-                <div class="signal-row" style="margin-top:6px"><span class="label">OI Change 24h</span><span class="value" id="oiChange">--</span></div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Session Highlight <span class="badge" id="sessionBadge" style="background:var(--bg-3);color:var(--text-2)">UTC</span></div>
-            <div class="signal-row">
-                <span class="label"><span class="session-indicator session-asian"></span>Asian</span>
-                <span class="value" id="sessionAsian">00:00-09:00 UTC</span>
-            </div>
-            <div class="signal-row">
-                <span class="label"><span class="session-indicator session-london"></span>London</span>
-                <span class="value" id="sessionLondon">09:00-17:00 UTC</span>
-            </div>
-            <div class="signal-row">
-                <span class="label"><span class="session-indicator session-ny"></span>New York</span>
-                <span class="value" id="sessionNY">14:00-22:00 UTC</span>
-            </div>
-            <div class="signal-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
-                <span class="label">Aktive Session</span>
-                <span class="value" id="activeSession" style="font-weight:700">--</span>
-            </div>
-            <div class="signal-row">
-                <span class="label">Session High</span>
-                <span class="value" id="sessionHigh">--</span>
-            </div>
-            <div class="signal-row">
-                <span class="label">Session Low</span>
-                <span class="value" id="sessionLow">--</span>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Fibonacci Retracement <span class="badge badge-live">AUTO</span></div>
-            <div id="fibLevels">
-                <div class="fib-row"><span class="fib-level">0%</span><span class="fib-price" id="fib0">--</span></div>
-                <div class="fib-row"><span class="fib-level" style="color:var(--warn)">38.2%</span><span class="fib-price" id="fib382" style="color:var(--warn)">--</span></div>
-                <div class="fib-row"><span class="fib-level" style="color:var(--text-1)">50%</span><span class="fib-price" id="fib50" style="color:var(--text-1)">--</span></div>
-                <div class="fib-row"><span class="fib-level" style="color:var(--long)">61.8%</span><span class="fib-price" id="fib618" style="color:var(--long)">--</span></div>
-                <div class="fib-row"><span class="fib-level" style="color:var(--short)">78.6%</span><span class="fib-price" id="fib786" style="color:var(--short)">--</span></div>
-                <div class="fib-row"><span class="fib-level">100%</span><span class="fib-price" id="fib100">--</span></div>
-            </div>
-            <div style="margin-top:8px;font-size:8px;color:var(--text-3);text-align:center">
-                Range: <span id="fibRange">--</span>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Wyckoff Phase <span class="badge badge-live">MTF</span></div>
-            <div class="signal-row"><span class="label">4h Bias</span><span class="value" id="wk4h">--</span></div>
-            <div class="signal-row"><span class="label">15m Entry</span><span class="value" id="wk15m">--</span></div>
-            <div class="signal-row"><span class="label">Konfluenz</span><span class="value" id="wkConf">--</span></div>
-            <div class="wyckoff-bar" id="wkBar">
-                <div class="wk-phase" data-p="A"></div>
-                <div class="wk-phase" data-p="B"></div>
-                <div class="wk-phase" data-p="C"></div>
-                <div class="wk-phase" data-p="D"></div>
-                <div class="wk-phase" data-p="E"></div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Fair Value Gaps <span class="badge" id="fvgCount" style="background:var(--bg-3);color:var(--text-2)">0</span></div>
-            <div id="fvgList"></div>
-        </div>
+    <div class="col" id="leftCol">
+        <div class="col-content" id="leftColContent"></div>
     </div>
 
     <!-- CENTER: CHART -->
@@ -1029,8 +1150,8 @@
                         <button class="tf-btn active" data-tf="4h">4h</button>
                     </div>
                     <div class="chart-type-group">
-                        <button class="chart-type-btn" id="btnLine">Line</button>
-                        <button class="chart-type-btn active" id="btnCandles">Candles</button>
+                        <button class="chart-type-btn" id="btnLine" data-i18n="chart_line">Line</button>
+                        <button class="chart-type-btn active" id="btnCandles" data-i18n="chart_candles">Candles</button>
                     </div>
                 </div>
                 <div class="toolbar-right">
@@ -1056,6 +1177,9 @@
                         <div class="toggle-chip" data-overlay="liq">
                             <div class="toggle-dot" style="background:var(--warn)"></div>LIQ
                         </div>
+                        <div class="toggle-chip" data-overlay="rsi">
+                            <div class="toggle-dot" style="background:#00bcd4"></div>RSI
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1063,91 +1187,163 @@
                 <div class="chart-container-main">
                     <canvas id="mainChart"></canvas>
                 </div>
+                <div class="chart-container-rsi" id="rsiContainer">
+                    <div class="volume-label">RSI / StochRSI</div>
+                    <canvas id="rsiChart"></canvas>
+                </div>
                 <div class="chart-container-volume">
-                    <div class="volume-label">Volumen</div>
+                    <div class="volume-label" data-i18n="volume">Volumen</div>
                     <canvas id="volumeChart"></canvas>
                 </div>
-                <div class="chart-hint">Drag Mitte: Pan | Y-Achse: Preis stretch | X-Achse: Zeit stretch | +/-: Zoom | Dbl-Click: Reset</div>
+                <div class="chart-hint" data-i18n="chart_hint">Drag: Pan | Wheel: Zoom | DblClick: Reset</div>
             </div>
         </div>
     </div>
 
     <!-- RIGHT COLUMN -->
-    <div class="col">
-        <div class="panel">
-            <div class="panel-title">Aktives Signal <span class="badge" id="signalBadge" style="background:var(--bg-3);color:var(--text-3)">KEIN SIGNAL</span></div>
-            <div class="signal-card" id="activeSignalCard">
-                <div class="signal-card-header">
-                    <span class="signal-direction" id="sigDirection" style="color:var(--text-3)">WARTE...</span>
-                    <span class="signal-quality quality-none" id="sigQuality">--</span>
-                </div>
-                <div class="signal-row"><span class="label">Entry</span><span class="value" id="sigEntry">--</span></div>
-                <div class="signal-row"><span class="label">Stop Loss</span><span class="value" id="sigSL">--</span></div>
-                <div class="signal-row"><span class="label">TP1</span><span class="value" id="sigTP1">--</span></div>
-                <div class="signal-row"><span class="label">TP2</span><span class="value" id="sigTP2">--</span></div>
-                <div class="signal-row"><span class="label">R:R</span><span class="value" id="sigRR">--</span></div>
-                <div class="signal-row"><span class="label">Confluence</span><span class="value" id="sigConf">--</span></div>
-                <div class="signal-row"><span class="label">Pattern</span><span class="value" id="sigPattern">--</span></div>
-                <div class="signal-row"><span class="label">Grund</span><span class="value" id="sigReason">--</span></div>
-                <div id="sigWarning" class="warning-text" style="display:none;"></div>
-                <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:0%"></div></div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Confluence Check</div>
-            <div class="signal-row"><span class="label">HTF Bias Align</span><span class="value" id="cfHTF">--</span></div>
-            <div class="signal-row"><span class="label">FVG Entry</span><span class="value" id="cfFVG">--</span></div>
-            <div class="signal-row"><span class="label">Fib Level</span><span class="value" id="cfFib">--</span></div>
-            <div class="signal-row"><span class="label">Order Block</span><span class="value" id="cfOB">--</span></div>
-            <div class="signal-row"><span class="label">MSS / BOS</span><span class="value" id="cfMSS">--</span></div>
-            <div class="signal-row"><span class="label">Candle Pattern</span><span class="value" id="cfPattern">--</span></div>
-            <div class="signal-row"><span class="label">Wyckoff MTF</span><span class="value" id="cfWyckoff">--</span></div>
-            <div class="signal-row"><span class="label">Liq Sweep</span><span class="value" id="cfLiq">--</span></div>
-            <div class="signal-row"><span class="label">Volume Confirm</span><span class="value" id="cfVol">--</span></div>
-            <div class="signal-row"><span class="label">Trend Align</span><span class="value" id="cfTrend">--</span></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Market Structure</div>
-            <div class="signal-row"><span class="label">Trend (LTF)</span><span class="value" id="mssTrend">--</span></div>
-            <div class="signal-row"><span class="label">Letzter MSS</span><span class="value" id="mssLast">--</span></div>
-            <div class="signal-row"><span class="label">Letzter BOS</span><span class="value" id="bosLast">--</span></div>
-            <div class="signal-row"><span class="label">Swing High</span><span class="value" id="mssSwH">--</span></div>
-            <div class="signal-row"><span class="label">Swing Low</span><span class="value" id="mssSwL">--</span></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Liquiditäts-Cluster</div>
-            <div id="liqList"></div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Candle Patterns <span class="badge badge-live">LIVE</span></div>
-            <div id="patternList" style="font-size:9px;color:var(--text-2)">Warte auf Daten...</div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Signal-Historie <span class="badge" id="histBadge" style="background:var(--bg-3);color:var(--text-2)">0</span></div>
-            <div id="signalHistory" style="max-height: 200px; overflow-y: auto;">
-                <div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">Noch keine Signale</div>
-            </div>
-            <button class="load-more-btn" id="loadMoreBtn" style="display:none;" onclick="loadMoreHistory()">Mehr laden</button>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">Session Stats <span class="badge badge-live">LIVE</span></div>
-            <div class="bt-grid">
-                <div class="bt-cell"><div class="bt-label">Signale</div><div class="bt-value" id="btWinRate" style="color:var(--text-2)">0</div></div>
-                <div class="bt-cell"><div class="bt-label">Win Rate</div><div class="bt-value" id="btPF" style="color:var(--text-2)">--</div></div>
-                <div class="bt-cell"><div class="bt-label">Ø R gewonnen</div><div class="bt-value" id="btRR" style="color:var(--text-2)">--</div></div>
-                <div class="bt-cell"><div class="bt-label">Total R</div><div class="bt-value" id="btDD" style="color:var(--text-2)">--</div></div>
-            </div>
-        </div>
+    <div class="col" id="rightCol">
+        <div class="col-content" id="rightColContent"></div>
     </div>
 </div>
 
 <script>
+// ============================================================
+// I18N TRANSLATIONS
+// ============================================================
+const TRANSLATIONS = {
+    de: {
+        loading_title: "INITIALISIERUNG",
+        loading_market: "Lade Marktdaten...",
+        app_title: "BTC SCALPING MONITOR",
+        header_funding: "Funding",
+        header_oi: "Open Interest",
+        header_session: "Session",
+        header_bias: "HTF Bias",
+        chart_line: "Linie",
+        chart_candles: "Kerzen",
+        volume: "Volumen",
+        chart_hint: "Drag: Bewegen | Mausrad: Zoom | Doppelklick: Reset",
+        panel_mtf: "Multi-Timeframe Bias",
+        panel_market: "Marktdaten",
+        panel_session: "Session Highlight",
+        panel_fib: "Fibonacci Retracement",
+        panel_wyckoff: "Wyckoff Phase",
+        panel_fvg: "Fair Value Gaps",
+        panel_signal: "Aktives Signal",
+        panel_confluence: "Konfluenz Check",
+        panel_structure: "Marktstruktur",
+        panel_liq: "Liquiditäts-Cluster",
+        panel_patterns: "Candle Patterns",
+        panel_history: "Signal-Historie",
+        panel_stats: "Session Stats",
+        panel_rsi: "RSI Analyse",
+        signal_waiting: "WARTE...",
+        signal_scanning: "SCANNING",
+        signal_no_signal: "KEIN SIGNAL",
+        status_active: "AKTIV",
+        status_tp1: "TP1 ERREICHT",
+        status_tp2: "TP2 ERREICHT",
+        status_sl: "STOP LOSS",
+        status_expired: "ABGELAUFEN",
+        category_risky: "RISKY",
+        category_neutral: "NEUTRAL",
+        category_safe: "SAFE",
+        tab_active: "AKTIV",
+        tab_closed: "ABGESCHLOSSEN",
+        filter_all: "Alle",
+        filter_long: "Long",
+        filter_short: "Short",
+        filter_risky: "Risky",
+        filter_safe: "Safe"
+    },
+    en: {
+        loading_title: "INITIALIZING",
+        loading_market: "Loading market data...",
+        app_title: "BTC SCALPING MONITOR",
+        header_funding: "Funding",
+        header_oi: "Open Interest",
+        header_session: "Session",
+        header_bias: "HTF Bias",
+        chart_line: "Line",
+        chart_candles: "Candles",
+        volume: "Volume",
+        chart_hint: "Drag: Pan | Wheel: Zoom | DblClick: Reset",
+        panel_mtf: "Multi-Timeframe Bias",
+        panel_market: "Market Data",
+        panel_session: "Session Highlight",
+        panel_fib: "Fibonacci Retracement",
+        panel_wyckoff: "Wyckoff Phase",
+        panel_fvg: "Fair Value Gaps",
+        panel_signal: "Active Signal",
+        panel_confluence: "Confluence Check",
+        panel_structure: "Market Structure",
+        panel_liq: "Liquidity Clusters",
+        panel_patterns: "Candle Patterns",
+        panel_history: "Signal History",
+        panel_stats: "Session Stats",
+        panel_rsi: "RSI Analysis",
+        signal_waiting: "WAITING...",
+        signal_scanning: "SCANNING",
+        signal_no_signal: "NO SIGNAL",
+        status_active: "ACTIVE",
+        status_tp1: "TP1 HIT",
+        status_tp2: "TP2 HIT",
+        status_sl: "STOP LOSS",
+        status_expired: "EXPIRED",
+        category_risky: "RISKY",
+        category_neutral: "NEUTRAL",
+        category_safe: "SAFE",
+        tab_active: "ACTIVE",
+        tab_closed: "CLOSED",
+        filter_all: "All",
+        filter_long: "Long",
+        filter_short: "Short",
+        filter_risky: "Risky",
+        filter_safe: "Safe"
+    }
+};
+
+let CURRENT_LANG = localStorage.getItem('btc_monitor_lang') || 'de';
+
+function setLanguage(lang) {
+    CURRENT_LANG = lang;
+    localStorage.setItem('btc_monitor_lang', lang);
+    
+    document.getElementById('btnDe').classList.toggle('active', lang === 'de');
+    document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[lang][key]) {
+            el.textContent = TRANSLATIONS[lang][key];
+        }
+    });
+    
+    // Update panel titles without re-rendering
+    document.querySelectorAll('.panel').forEach(panel => {
+        const id = panel.dataset.panelId;
+        if (id && PANEL_DEFINITIONS[id]) {
+            const titleEl = panel.querySelector('.panel-title span:first-child');
+            if (titleEl) titleEl.textContent = t(PANEL_DEFINITIONS[id].title);
+        }
+    });
+    
+    updateAllUI();
+}
+
+function t(key) {
+    return TRANSLATIONS[CURRENT_LANG][key] || key;
+}
+
+// Safe element updater
+function safeSetText(id, text, color) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = text;
+        if (color) el.style.color = color;
+    }
+}
+
 // ============================================================
 // STATE
 // ============================================================
@@ -1158,10 +1354,12 @@ const STATE = {
     wsReconnectTimer: null,
     chart: null,
     volumeChart: null,
+    rsiChart: null,
     currentTF: '4h',
     chartType: 'candles',
+    chartState: null,
 
-    overlays: { ema: true, fvg: true, fib: true, session: true, ob: false, mss: false, liq: false },
+    overlays: { ema: true, fvg: true, fib: true, session: true, ob: false, mss: false, liq: false, rsi: false },
 
     tfData: {},
     tfBias: {},
@@ -1190,18 +1388,541 @@ const STATE = {
     signalHistory: [],
     signalCooldown: 0,
     COOLDOWN_MS: 15 * 60 * 1000,
-    signalCount: 0,
+    signalCount: { risky: 0, neutral: 0, safe: 0 },
     currentPattern: null,
     
-    historyPage: 0,
-    historyPerPage: 10,
-    isSyncing: false,
+    rsiData: [],
+    stochRsiData: { k: [], d: [] },
+    divergences: [],
+    
+    historyTab: 'active',
+    historyFilter: 'all',
+    
+    panelOrder: {
+        left: ['mtf', 'market', 'session', 'fib', 'wyckoff', 'fvg', 'rsi'],
+        right: ['signal', 'confluence', 'structure', 'liq', 'patterns', 'history', 'stats']
+    },
+    minimizedPanels: new Set(),
+    panelsInitialized: false
 };
 
 const FVG_THRESHOLDS = {
     '1m': 0.001, '3m': 0.0015, '5m': 0.002, '15m': 0.003,
     '30m': 0.004, '1h': 0.005, '2h': 0.006, '4h': 0.008
 };
+
+// ============================================================
+// PANEL MANAGEMENT & DRAG DROP
+// ============================================================
+const PANEL_DEFINITIONS = {
+    mtf: { title: 'panel_mtf', badge: 'LIVE', content: renderMTFPanel },
+    market: { title: 'panel_market', badge: 'FUTURES', content: renderMarketPanel },
+    session: { title: 'panel_session', badge: 'UTC', content: renderSessionPanel },
+    fib: { title: 'panel_fib', badge: 'AUTO', content: renderFibPanel },
+    wyckoff: { title: 'panel_wyckoff', badge: 'MTF', content: renderWyckoffPanel },
+    fvg: { title: 'panel_fvg', badge: null, content: renderFVGPanel },
+    rsi: { title: 'panel_rsi', badge: 'LIVE', content: renderRSIPanel },
+    signal: { title: 'panel_signal', badge: null, content: renderSignalPanel },
+    confluence: { title: 'panel_confluence', badge: null, content: renderConfluencePanel },
+    structure: { title: 'panel_structure', badge: null, content: renderStructurePanel },
+    liq: { title: 'panel_liq', badge: null, content: renderLiqPanel },
+    patterns: { title: 'panel_patterns', badge: 'LIVE', content: renderPatternsPanel },
+    history: { title: 'panel_history', badge: null, content: renderHistoryPanel },
+    stats: { title: 'panel_stats', badge: 'LIVE', content: renderStatsPanel }
+};
+
+function initPanels() {
+    if (STATE.panelsInitialized) return;
+    
+    const savedOrder = localStorage.getItem('btc_monitor_panels');
+    const savedMinimized = localStorage.getItem('btc_monitor_minimized');
+    
+    if (savedOrder) {
+        try {
+            STATE.panelOrder = JSON.parse(savedOrder);
+        } catch(e) {}
+    }
+    if (savedMinimized) {
+        try {
+            STATE.minimizedPanels = new Set(JSON.parse(savedMinimized));
+        } catch(e) {}
+    }
+    
+    renderPanels();
+    setupDragAndDrop();
+    STATE.panelsInitialized = true;
+}
+
+function renderPanels() {
+    const leftContainer = document.getElementById('leftColContent');
+    const rightContainer = document.getElementById('rightColContent');
+    
+    if (!leftContainer || !rightContainer) return;
+    
+    leftContainer.innerHTML = '';
+    rightContainer.innerHTML = '';
+    
+    STATE.panelOrder.left.forEach(id => createPanel(id, leftContainer));
+    STATE.panelOrder.right.forEach(id => createPanel(id, rightContainer));
+}
+
+function createPanel(id, container) {
+    const def = PANEL_DEFINITIONS[id];
+    if (!def) return;
+    
+    const panel = document.createElement('div');
+    panel.className = `panel${STATE.minimizedPanels.has(id) ? ' minimized' : ''}`;
+    panel.dataset.panelId = id;
+    panel.draggable = true;
+    
+    const badgeHtml = def.badge ? `<span class="badge badge-live">${def.badge}</span>` : '';
+    
+    panel.innerHTML = `
+        <div class="panel-header">
+            <div class="panel-title">
+                <span>${t(def.title)}</span>
+                ${badgeHtml}
+            </div>
+            <div class="panel-controls">
+                <button class="panel-btn" onclick="togglePanel('${id}')">${STATE.minimizedPanels.has(id) ? '▼' : '▲'}</button>
+            </div>
+        </div>
+        <div class="panel-content" id="panel-${id}"></div>
+    `;
+    
+    container.appendChild(panel);
+    
+    const contentEl = panel.querySelector('.panel-content');
+    if (contentEl && def.content) {
+        def.content(contentEl);
+    }
+}
+
+function togglePanel(id) {
+    if (STATE.minimizedPanels.has(id)) {
+        STATE.minimizedPanels.delete(id);
+    } else {
+        STATE.minimizedPanels.add(id);
+    }
+    localStorage.setItem('btc_monitor_minimized', JSON.stringify([...STATE.minimizedPanels]));
+    
+    // Re-render just this panel's minimized state without full re-render
+    const panel = document.querySelector(`.panel[data-panel-id="${id}"]`);
+    if (panel) {
+        panel.classList.toggle('minimized', STATE.minimizedPanels.has(id));
+        const btn = panel.querySelector('.panel-btn');
+        if (btn) btn.textContent = STATE.minimizedPanels.has(id) ? '▼' : '▲';
+    }
+}
+
+function setupDragAndDrop() {
+    let draggedPanel = null;
+    let draggedFrom = null;
+    
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('panel')) {
+            draggedPanel = e.target;
+            draggedFrom = draggedPanel.parentElement.id;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    });
+    
+    document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('panel')) {
+            e.target.classList.remove('dragging');
+            draggedPanel = null;
+            draggedFrom = null;
+            savePanelOrder();
+        }
+    });
+    
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const container = e.target.closest('.col-content');
+        if (!container || !draggedPanel) return;
+        
+        const afterElement = getDragAfterElement(container, e.clientY);
+        if (afterElement) {
+            container.insertBefore(draggedPanel, afterElement);
+        } else {
+            container.appendChild(draggedPanel);
+        }
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.panel:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function savePanelOrder() {
+    const leftCol = document.getElementById('leftColContent');
+    const rightCol = document.getElementById('rightColContent');
+    
+    if (leftCol) STATE.panelOrder.left = [...leftCol.querySelectorAll('.panel')].map(p => p.dataset.panelId).filter(id => id);
+    if (rightCol) STATE.panelOrder.right = [...rightCol.querySelectorAll('.panel')].map(p => p.dataset.panelId).filter(id => id);
+    
+    localStorage.setItem('btc_monitor_panels', JSON.stringify(STATE.panelOrder));
+}
+
+// ============================================================
+// RSI & STOCHRSI CALCULATIONS
+// ============================================================
+function calcRSI(closes, period = 14) {
+    if (closes.length < period + 1) return [];
+    
+    const rsi = [];
+    let gains = 0;
+    let losses = 0;
+    
+    for (let i = 1; i <= period; i++) {
+        const change = closes[i] - closes[i-1];
+        if (change > 0) gains += change;
+        else losses -= change;
+    }
+    
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+    
+    for (let i = period; i < closes.length; i++) {
+        const change = closes[i] - closes[i-1];
+        const gain = change > 0 ? change : 0;
+        const loss = change < 0 ? -change : 0;
+        
+        avgGain = ((avgGain * (period - 1)) + gain) / period;
+        avgLoss = ((avgLoss * (period - 1)) + loss) / period;
+        
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        rsi.push(100 - (100 / (1 + rs)));
+    }
+    
+    const result = new Array(period).fill(null);
+    return result.concat(rsi);
+}
+
+function calcStochRSI(closes, rsiPeriod = 14, stochPeriod = 14, kPeriod = 3, dPeriod = 3) {
+    const rsi = calcRSI(closes, rsiPeriod);
+    const validRsi = rsi.filter(v => v !== null);
+    
+    if (validRsi.length < stochPeriod) return { k: [], d: [] };
+    
+    const stochK = [];
+    
+    for (let i = stochPeriod - 1; i < validRsi.length; i++) {
+        const slice = validRsi.slice(i - stochPeriod + 1, i + 1);
+        const min = Math.min(...slice);
+        const max = Math.max(...slice);
+        const current = validRsi[i];
+        
+        if (max === min) {
+            stochK.push(50);
+        } else {
+            stochK.push(((current - min) / (max - min)) * 100);
+        }
+    }
+    
+    const kSmoothed = calcSMA(stochK, kPeriod);
+    const d = calcSMA(kSmoothed.filter(v => v !== null), dPeriod);
+    
+    const padLength = closes.length - kSmoothed.length;
+    const paddedK = [...Array(padLength).fill(null), ...kSmoothed];
+    const paddedD = [...Array(padLength - (kSmoothed.length - d.length)).fill(null), ...d];
+    
+    return { k: paddedK, d: paddedD };
+}
+
+function calcSMA(data, period) {
+    const sma = [];
+    for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+            sma.push(null);
+        } else {
+            const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+            sma.push(sum / period);
+        }
+    }
+    return sma;
+}
+
+function detectDivergences(candles, rsi) {
+    const divergences = [];
+    if (candles.length < 20 || rsi.length < 20) return divergences;
+    
+    const priceSwings = detectSwingPoints(candles, 2);
+    const rsiSwings = detectRSISwings(rsi, 2);
+    
+    const priceLows = priceSwings.filter(s => s.type === 'low').slice(-3);
+    const rsiLows = rsiSwings.filter(s => s.type === 'low').slice(-3);
+    
+    if (priceLows.length >= 2 && rsiLows.length >= 2) {
+        const p1 = priceLows[priceLows.length - 2];
+        const p2 = priceLows[priceLows.length - 1];
+        const r1 = rsiLows.find(r => Math.abs(r.index - p1.index) < 3);
+        const r2 = rsiLows.find(r => Math.abs(r.index - p2.index) < 3);
+        
+        if (r1 && r2 && p2.price < p1.price && r2.value > r1.value) {
+            divergences.push({
+                type: 'bullish',
+                startIndex: p1.index,
+                endIndex: p2.index,
+                startPrice: p1.price,
+                endPrice: p2.price,
+                startRsi: r1.value,
+                endRsi: r2.value,
+                strength: 'strong'
+            });
+        }
+    }
+    
+    const priceHighs = priceSwings.filter(s => s.type === 'high').slice(-3);
+    const rsiHighs = rsiSwings.filter(s => s.type === 'high').slice(-3);
+    
+    if (priceHighs.length >= 2 && rsiHighs.length >= 2) {
+        const p1 = priceHighs[priceHighs.length - 2];
+        const p2 = priceHighs[priceHighs.length - 1];
+        const r1 = rsiHighs.find(r => Math.abs(r.index - p1.index) < 3);
+        const r2 = rsiHighs.find(r => Math.abs(r.index - p2.index) < 3);
+        
+        if (r1 && r2 && p2.price > p1.price && r2.value < r1.value) {
+            divergences.push({
+                type: 'bearish',
+                startIndex: p1.index,
+                endIndex: p2.index,
+                startPrice: p1.price,
+                endPrice: p2.price,
+                startRsi: r1.value,
+                endRsi: r2.value,
+                strength: 'strong'
+            });
+        }
+    }
+    
+    return divergences;
+}
+
+function detectRSISwings(rsi, lookback = 2) {
+    const swings = [];
+    for (let i = lookback; i < rsi.length - lookback; i++) {
+        if (rsi[i] === null) continue;
+        
+        let isHigh = true, isLow = true;
+        for (let j = 1; j <= lookback; j++) {
+            if (rsi[i-j] === null || rsi[i+j] === null) {
+                isHigh = false;
+                isLow = false;
+                break;
+            }
+            if (rsi[i] <= rsi[i-j] || rsi[i] <= rsi[i+j]) isHigh = false;
+            if (rsi[i] >= rsi[i-j] || rsi[i] >= rsi[i+j]) isLow = false;
+        }
+        
+        if (isHigh) swings.push({ type: 'high', value: rsi[i], index: i });
+        if (isLow) swings.push({ type: 'low', value: rsi[i], index: i });
+    }
+    return swings;
+}
+
+// ============================================================
+// PANEL RENDER FUNCTIONS
+// ============================================================
+function renderMTFPanel(el) {
+    el.innerHTML = '<div id="mtfContainer"></div>';
+    // Render immediately if data exists
+    if (Object.keys(STATE.tfBias).length > 0) renderMTFBias();
+}
+
+function renderMarketPanel(el) {
+    el.innerHTML = `
+        <div class="funding-grid">
+            <div class="funding-cell">
+                <div class="funding-label" data-i18n="header_funding">Funding Rate</div>
+                <div class="funding-value" id="fundingRate" style="color:var(--text-2)">--</div>
+            </div>
+            <div class="funding-cell">
+                <div class="funding-label">Next Funding</div>
+                <div class="funding-value" id="nextFunding" style="color:var(--text-2);font-size:11px">--</div>
+            </div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <div class="signal-row"><span class="label">Open Interest</span><span class="value" id="oiValue">--</span></div>
+            <div class="oi-bar"><div class="oi-fill" id="oiFill" style="width:0%"></div></div>
+            <div class="signal-row" style="margin-top:6px"><span class="label">OI Change 24h</span><span class="value" id="oiChange">--</span></div>
+        </div>
+    `;
+}
+
+function renderSessionPanel(el) {
+    el.innerHTML = `
+        <div class="signal-row">
+            <span class="label"><span class="session-indicator session-asian"></span>Asian</span>
+            <span class="value" id="sessionAsian">00:00-09:00 UTC</span>
+        </div>
+        <div class="signal-row">
+            <span class="label"><span class="session-indicator session-london"></span>London</span>
+            <span class="value" id="sessionLondon">09:00-17:00 UTC</span>
+        </div>
+        <div class="signal-row">
+            <span class="label"><span class="session-indicator session-ny"></span>New York</span>
+            <span class="value" id="sessionNY">14:00-22:00 UTC</span>
+        </div>
+        <div class="signal-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+            <span class="label">Active Session</span>
+            <span class="value" id="activeSession" style="font-weight:700">--</span>
+        </div>
+        <div class="signal-row">
+            <span class="label">Session High</span>
+            <span class="value" id="sessionHigh">--</span>
+        </div>
+        <div class="signal-row">
+            <span class="label">Session Low</span>
+            <span class="value" id="sessionLow">--</span>
+        </div>
+    `;
+}
+
+function renderFibPanel(el) {
+    el.innerHTML = `
+        <div id="fibLevels">
+            <div class="fib-row"><span class="fib-level">0%</span><span class="fib-price" id="fib0">--</span></div>
+            <div class="fib-row"><span class="fib-level" style="color:var(--warn)">38.2%</span><span class="fib-price" id="fib382" style="color:var(--warn)">--</span></div>
+            <div class="fib-row"><span class="fib-level" style="color:var(--text-1)">50%</span><span class="fib-price" id="fib50" style="color:var(--text-1)">--</span></div>
+            <div class="fib-row"><span class="fib-level" style="color:var(--long)">61.8%</span><span class="fib-price" id="fib618" style="color:var(--long)">--</span></div>
+            <div class="fib-row"><span class="fib-level" style="color:var(--short)">78.6%</span><span class="fib-price" id="fib786" style="color:var(--short)">--</span></div>
+            <div class="fib-row"><span class="fib-level">100%</span><span class="fib-price" id="fib100">--</span></div>
+        </div>
+        <div style="margin-top:8px;font-size:8px;color:var(--text-3);text-align:center">
+            Range: <span id="fibRange">--</span>
+        </div>
+    `;
+}
+
+function renderWyckoffPanel(el) {
+    el.innerHTML = `
+        <div class="signal-row"><span class="label">4h Bias</span><span class="value" id="wk4h">--</span></div>
+        <div class="signal-row"><span class="label">15m Entry</span><span class="value" id="wk15m">--</span></div>
+        <div class="signal-row"><span class="label">Konfluenz</span><span class="value" id="wkConf">--</span></div>
+        <div class="wyckoff-bar" id="wkBar">
+            <div class="wk-phase" data-p="A"></div>
+            <div class="wk-phase" data-p="B"></div>
+            <div class="wk-phase" data-p="C"></div>
+            <div class="wk-phase" data-p="D"></div>
+            <div class="wk-phase" data-p="E"></div>
+        </div>
+    `;
+}
+
+function renderFVGPanel(el) {
+    el.innerHTML = '<div id="fvgList"></div>';
+}
+
+function renderRSIPanel(el) {
+    el.innerHTML = `
+        <div class="signal-row"><span class="label">RSI (14)</span><span class="value" id="rsiValue">--</span></div>
+        <div class="signal-row"><span class="label">StochRSI %K</span><span class="value" id="stochKValue">--</span></div>
+        <div class="signal-row"><span class="label">StochRSI %D</span><span class="value" id="stochDValue">--</span></div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+            <div class="signal-row"><span class="label">Divergenz</span><span class="value" id="divergenceValue">--</span></div>
+            <div id="divergenceList" style="margin-top:4px;font-size:9px;"></div>
+        </div>
+    `;
+}
+
+function renderSignalPanel(el) {
+    el.innerHTML = `
+        <div class="signal-card" id="activeSignalCard">
+            <div class="signal-card-header">
+                <span class="signal-direction" id="sigDirection" style="color:var(--text-3)">${t('signal_waiting')}</span>
+                <span class="signal-quality quality-none" id="sigQuality">--</span>
+            </div>
+            <div class="signal-row"><span class="label">Entry</span><span class="value" id="sigEntry">--</span></div>
+            <div class="signal-row"><span class="label">Stop Loss</span><span class="value" id="sigSL">--</span></div>
+            <div class="signal-row"><span class="label">TP1</span><span class="value" id="sigTP1">--</span></div>
+            <div class="signal-row"><span class="label">TP2</span><span class="value" id="sigTP2">--</span></div>
+            <div class="signal-row"><span class="label">R:R</span><span class="value" id="sigRR">--</span></div>
+            <div class="signal-row"><span class="label">Category</span><span class="value" id="sigCategory">--</span></div>
+            <div class="signal-row"><span class="label">Confluence</span><span class="value" id="sigConf">--</span></div>
+            <div class="signal-row"><span class="label">Pattern</span><span class="value" id="sigPattern">--</span></div>
+            <div class="signal-row"><span class="label">Reason</span><span class="value" id="sigReason">--</span></div>
+            <div id="sigWarning" class="warning-text" style="display:none;"></div>
+            <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:0%"></div></div>
+        </div>
+    `;
+}
+
+function renderConfluencePanel(el) {
+    el.innerHTML = `
+        <div class="signal-row"><span class="label">HTF Bias Align</span><span class="value" id="cfHTF">--</span></div>
+        <div class="signal-row"><span class="label">FVG Entry</span><span class="value" id="cfFVG">--</span></div>
+        <div class="signal-row"><span class="label">Fib Level</span><span class="value" id="cfFib">--</span></div>
+        <div class="signal-row"><span class="label">Order Block</span><span class="value" id="cfOB">--</span></div>
+        <div class="signal-row"><span class="label">MSS / BOS</span><span class="value" id="cfMSS">--</span></div>
+        <div class="signal-row"><span class="label">Candle Pattern</span><span class="value" id="cfPattern">--</span></div>
+        <div class="signal-row"><span class="label">Wyckoff MTF</span><span class="value" id="cfWyckoff">--</span></div>
+        <div class="signal-row"><span class="label">Liq Sweep</span><span class="value" id="cfLiq">--</span></div>
+        <div class="signal-row"><span class="label">RSI Divergence</span><span class="value" id="cfRSI">--</span></div>
+        <div class="signal-row"><span class="label">Volume Confirm</span><span class="value" id="cfVol">--</span></div>
+        <div class="signal-row"><span class="label">Trend Align</span><span class="value" id="cfTrend">--</span></div>
+    `;
+}
+
+function renderStructurePanel(el) {
+    el.innerHTML = `
+        <div class="signal-row"><span class="label">Trend (LTF)</span><span class="value" id="mssTrend">--</span></div>
+        <div class="signal-row"><span class="label">Last MSS</span><span class="value" id="mssLast">--</span></div>
+        <div class="signal-row"><span class="label">Last BOS</span><span class="value" id="bosLast">--</span></div>
+        <div class="signal-row"><span class="label">Swing High</span><span class="value" id="mssSwH">--</span></div>
+        <div class="signal-row"><span class="label">Swing Low</span><span class="value" id="mssSwL">--</span></div>
+    `;
+}
+
+function renderLiqPanel(el) {
+    el.innerHTML = '<div id="liqList"></div>';
+}
+
+function renderPatternsPanel(el) {
+    el.innerHTML = '<div id="patternList" style="font-size:9px;color:var(--text-2)">Waiting for data...</div>';
+}
+
+function renderHistoryPanel(el) {
+    el.innerHTML = `
+        <div class="history-tabs">
+            <button class="history-tab active" onclick="setHistoryTab('active')" id="tabActive" data-i18n="tab_active">AKTIV</button>
+            <button class="history-tab" onclick="setHistoryTab('closed')" id="tabClosed" data-i18n="tab_closed">ABGESCHLOSSEN</button>
+        </div>
+        <div class="history-filters">
+            <button class="filter-chip active" onclick="setHistoryFilter('all')" id="filterAll" data-i18n="filter_all">Alle</button>
+            <button class="filter-chip" onclick="setHistoryFilter('long')" id="filterLong" data-i18n="filter_long">Long</button>
+            <button class="filter-chip" onclick="setHistoryFilter('short')" id="filterShort" data-i18n="filter_short">Short</button>
+            <button class="filter-chip" onclick="setHistoryFilter('risky')" id="filterRisky" data-i18n="filter_risky">Risky</button>
+            <button class="filter-chip" onclick="setHistoryFilter('safe')" id="filterSafe" data-i18n="filter_safe">Safe</button>
+        </div>
+        <div id="signalHistory" style="max-height: 200px; overflow-y: auto;">
+            <div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">No signals yet</div>
+        </div>
+        <button class="load-more-btn" id="loadMoreBtn" style="display:none;" onclick="loadMoreHistory()">Load more</button>
+    `;
+}
+
+function renderStatsPanel(el) {
+    el.innerHTML = `
+        <div class="bt-grid">
+            <div class="bt-cell"><div class="bt-label" data-i18n="filter_risky">Risky</div><div class="bt-value" id="statRisky" style="color:var(--text-2)">0</div></div>
+            <div class="bt-cell"><div class="bt-label" data-i18n="category_neutral">Neutral</div><div class="bt-value" id="statNeutral" style="color:var(--text-2)">0</div></div>
+            <div class="bt-cell"><div class="bt-label">Win Rate</div><div class="bt-value" id="statWinRate" style="color:var(--text-2)">--</div></div>
+            <div class="bt-cell"><div class="bt-label">Total R</div><div class="bt-value" id="statTotalR" style="color:var(--text-2)">--</div></div>
+        </div>
+    `;
+}
 
 // ============================================================
 // DATA FETCHING
@@ -1218,7 +1939,6 @@ async function fetchCandles(interval, limit = 500) {
 
 async function fetchFundingData() {
     try {
-        // Funding Rate
         const fundRes = await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
         if (fundRes.ok) {
             const fundData = await fundRes.json();
@@ -1228,20 +1948,10 @@ async function fetchFundingData() {
             }
         }
         
-        // Open Interest
         const oiRes = await fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT');
         if (oiRes.ok) {
             const oiData = await oiRes.json();
             STATE.openInterest.value = parseFloat(oiData.openInterest);
-        }
-        
-        // 24h Change for OI (approximation via 24h ticker)
-        const tickerRes = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT');
-        if (tickerRes.ok) {
-            const ticker = await tickerRes.json();
-            // OI Change ist nicht direkt im Ticker, wir nutzen Volume als Proxy oder speichern einfach aktuellen Wert
-            // Alternativ: Vergleich mit gespeichertem Wert von vor 24h (hier vereinfacht)
-            STATE.openInterest.change24h = 0; // Placeholder, da API limitiert
         }
         
         updateFundingUI();
@@ -1253,26 +1963,23 @@ function updateFundingUI() {
     const ratePercent = (rate * 100).toFixed(4);
     const isPositive = rate >= 0;
     
-    document.getElementById('fundingRate').textContent = (isPositive ? '+' : '') + ratePercent + '%';
-    document.getElementById('fundingRate').style.color = isPositive ? 'var(--short)' : 'var(--long)'; // Positive = Longs zahlen Shorts = Bearish
+    safeSetText('fundingRate', (isPositive ? '+' : '') + ratePercent + '%', isPositive ? 'var(--short)' : 'var(--long)');
+    safeSetText('headerFunding', (isPositive ? '+' : '') + ratePercent + '%', isPositive ? 'var(--short)' : 'var(--long)');
     
-    document.getElementById('headerFunding').textContent = (isPositive ? '+' : '') + ratePercent + '%';
-    document.getElementById('headerFunding').style.color = isPositive ? 'var(--short)' : 'var(--long)';
-    
-    // Next Funding Countdown
     const nextTime = STATE.funding.nextFunding;
     if (nextTime) {
         const diff = nextTime - Date.now();
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        document.getElementById('nextFunding').textContent = `${hours}h ${minutes}m`;
-        document.getElementById('headerOI').textContent = (STATE.openInterest.value / 1000000).toFixed(2) + 'M';
+        safeSetText('nextFunding', `${hours}h ${minutes}m`);
+        safeSetText('headerOI', (STATE.openInterest.value / 1000000).toFixed(2) + 'M');
     }
     
-    // OI Display
     const oiM = (STATE.openInterest.value / 1000000000).toFixed(2);
-    document.getElementById('oiValue').textContent = oiM + ' B';
-    document.getElementById('oiFill').style.width = '50%'; // Placeholder für Visual
+    safeSetText('oiValue', oiM + ' B');
+    
+    const oiFill = document.getElementById('oiFill');
+    if (oiFill) oiFill.style.width = '50%';
 }
 
 async function loadAllTimeframes() {
@@ -1286,6 +1993,18 @@ async function loadAllTimeframes() {
     if (STATE.tfData['1h'] && STATE.tfData['1h'].length >= 24) {
         STATE.openPrice24h = STATE.tfData['1h'][STATE.tfData['1h'].length - 24].o;
     }
+    
+    updateRSIData();
+}
+
+function updateRSIData() {
+    const candles = STATE.tfData[STATE.currentTF];
+    if (!candles || candles.length < 20) return;
+    
+    const closes = candles.map(c => c.c);
+    STATE.rsiData = calcRSI(closes, 14);
+    STATE.stochRsiData = calcStochRSI(closes, 14, 14, 3, 3);
+    STATE.divergences = detectDivergences(candles, STATE.rsiData);
 }
 
 // ============================================================
@@ -1297,28 +2016,25 @@ function detectSession() {
     const utcMinutes = now.getUTCMinutes();
     const totalMinutes = utcHours * 60 + utcMinutes;
     
-    // Sessions in UTC Minutes: Asian 00:00-09:00, London 09:00-17:00, NY 14:00-22:00
-    // NY Overlap mit London: 14:00-17:00
-    
     let sessionName = 'none';
     let sessionColor = '';
     let startMin = 0, endMin = 0;
     
-    if (totalMinutes >= 0 && totalMinutes < 540) { // 00:00 - 09:00
+    if (totalMinutes >= 0 && totalMinutes < 540) {
         sessionName = 'Asian';
         sessionColor = '#ffd700';
         startMin = 0;
         endMin = 540;
-    } else if (totalMinutes >= 540 && totalMinutes < 1020) { // 09:00 - 17:00
+    } else if (totalMinutes >= 540 && totalMinutes < 1020) {
         sessionName = 'London';
         sessionColor = '#00bcd4';
         startMin = 540;
         endMin = 1020;
-        if (totalMinutes >= 840) { // 14:00+ = NY Overlap
+        if (totalMinutes >= 840) {
             sessionName = 'London/NY';
             sessionColor = '#ff5722';
         }
-    } else if (totalMinutes >= 840 && totalMinutes < 1320) { // 14:00 - 22:00
+    } else if (totalMinutes >= 840 && totalMinutes < 1320) {
         sessionName = 'New York';
         sessionColor = '#ff5722';
         startMin = 840;
@@ -1338,7 +2054,6 @@ function detectSession() {
         utcHours: utcHours
     };
     
-    // Berechne Session High/Low basierend auf aktuellem TF
     calculateSessionRange();
     updateSessionUI();
 }
@@ -1360,16 +2075,12 @@ function calculateSessionRange() {
 
 function updateSessionUI() {
     const s = STATE.currentSession;
-    document.getElementById('activeSession').textContent = s.name;
-    document.getElementById('activeSession').style.color = s.color;
-    document.getElementById('headerSession').textContent = s.name;
-    document.getElementById('headerSession').style.color = s.color;
+    safeSetText('activeSession', s.name, s.color);
+    safeSetText('headerSession', s.name, s.color);
     
     if (s.high && s.low) {
-        document.getElementById('sessionHigh').textContent = '$' + s.high.toFixed(0);
-        document.getElementById('sessionHigh').style.color = 'var(--short)';
-        document.getElementById('sessionLow').textContent = '$' + s.low.toFixed(0);
-        document.getElementById('sessionLow').style.color = 'var(--long)';
+        safeSetText('sessionHigh', '$' + s.high.toFixed(0), 'var(--short)');
+        safeSetText('sessionLow', '$' + s.low.toFixed(0), 'var(--long)');
     }
 }
 
@@ -1380,7 +2091,6 @@ function calculateFibonacci() {
     const candles = STATE.tfData[STATE.currentTF];
     if (!candles || candles.length < 20) return;
     
-    // Finde letztes Swing High/Low basierend auf den letzten 50 Candles
     const lookback = Math.min(50, candles.length);
     const recent = candles.slice(-lookback);
     
@@ -1392,17 +2102,15 @@ function calculateFibonacci() {
         if (c.l < swingLow.price) swingLow = { price: c.l, time: c.t, index: i };
     });
     
-    // Bestimme Trend-Richtung: Wenn High neuer als Low = Downtrend (Retracement von High)
-    // Wenn Low neuer als High = Uptrend (Retracement von Low)
     const isUptrend = swingLow.time > swingHigh.time;
     
     let startPrice, endPrice;
     if (isUptrend) {
         startPrice = swingLow.price;
-        endPrice = recent[recent.length-1].h; // Aktuelles High als Ziel
+        endPrice = recent[recent.length-1].h;
     } else {
         startPrice = swingHigh.price;
-        endPrice = recent[recent.length-1].l; // Aktuelles Low als Ziel
+        endPrice = recent[recent.length-1].l;
     }
     
     const range = Math.abs(startPrice - endPrice);
@@ -1429,15 +2137,19 @@ function calculateFibonacci() {
 
 function updateFibUI() {
     const fib = STATE.fibLevels;
-    document.getElementById('fib0').textContent = '$' + fib.levels[0].toFixed(0);
-    document.getElementById('fib382').textContent = '$' + fib.levels[382].toFixed(0);
-    document.getElementById('fib50').textContent = '$' + fib.levels[50].toFixed(0);
-    document.getElementById('fib618').textContent = '$' + fib.levels[618].toFixed(0);
-    document.getElementById('fib786').textContent = '$' + fib.levels[786].toFixed(0);
-    document.getElementById('fib100').textContent = '$' + fib.levels[100].toFixed(0);
+    const ids = ['fib0', 'fib382', 'fib50', 'fib618', 'fib786', 'fib100'];
+    const keys = [0, 382, 50, 618, 786, 100];
     
-    const range = Math.abs(fib.high - fib.low);
-    document.getElementById('fibRange').textContent = '$' + range.toFixed(0) + ' (' + ((range/fib.low)*100).toFixed(1) + '%)';
+    ids.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el && fib.levels[keys[i]]) el.textContent = '$' + fib.levels[keys[i]].toFixed(0);
+    });
+    
+    const fibRangeEl = document.getElementById('fibRange');
+    if (fibRangeEl) {
+        const range = Math.abs(fib.high - fib.low);
+        fibRangeEl.textContent = '$' + range.toFixed(0) + ' (' + ((range/fib.low)*100).toFixed(1) + '%)';
+    }
 }
 
 // ============================================================
@@ -1524,8 +2236,10 @@ function detectCandlePatterns(candles) {
 
 function renderPatterns(patterns) {
     const el = document.getElementById('patternList');
+    if (!el) return;
+    
     if (!patterns) {
-        el.innerHTML = '<span style="color:var(--text-3)">Keine Patterns erkannt</span>';
+        el.innerHTML = '<span style="color:var(--text-3)">No patterns detected</span>';
         return;
     }
     el.innerHTML = patterns.map(p => 
@@ -1564,6 +2278,8 @@ function analyzeMTFBias() {
 
 function renderMTFBias() {
     const el = document.getElementById('mtfContainer');
+    if (!el) return;
+    
     const tfs = ['5m', '15m', '30m', '1h', '2h', '4h'];
     el.innerHTML = tfs.map(tf => {
         const b = STATE.tfBias[tf] || { bias: 'neutral', strength: 0, score: 0 };
@@ -1575,9 +2291,8 @@ function renderMTFBias() {
             <div class="mtf-bar-fill" style="left:${left};width:${pct}%;background:${col}"></div></div>
             <span style="color:${col};font-weight:600;text-align:right">${b.bias.toUpperCase()}</span></div>`;
     }).join('');
-    const htf = document.getElementById('htfBias');
-    htf.textContent = STATE.htfBias;
-    htf.style.color = STATE.htfBias === 'BULLISH' ? 'var(--long)' : STATE.htfBias === 'BEARISH' ? 'var(--short)' : 'var(--text-2)';
+    
+    safeSetText('htfBias', STATE.htfBias, STATE.htfBias === 'BULLISH' ? 'var(--long)' : STATE.htfBias === 'BEARISH' ? 'var(--short)' : 'var(--text-2)');
 }
 
 // ============================================================
@@ -1633,14 +2348,15 @@ function detectMSSandBOS(candles) {
     }
     STATE.currentTrend = trend;
 
-    document.getElementById('mssTrend').textContent = trend.toUpperCase();
-    document.getElementById('mssTrend').style.color = trend === 'bullish' ? 'var(--long)' : trend === 'bearish' ? 'var(--short)' : 'var(--text-2)';
+    safeSetText('mssTrend', trend.toUpperCase(), trend === 'bullish' ? 'var(--long)' : trend === 'bearish' ? 'var(--short)' : 'var(--text-2)');
+    
     const lm = STATE.mssEvents[STATE.mssEvents.length - 1];
     const lb = STATE.bosEvents[STATE.bosEvents.length - 1];
-    if (lm) { document.getElementById('mssLast').textContent = `${lm.type.replace('_',' ')} @ $${lm.price.toFixed(0)}`; document.getElementById('mssLast').style.color = lm.type.includes('BULL') ? 'var(--long)' : 'var(--short)'; }
-    if (lb) { document.getElementById('bosLast').textContent = `${lb.type.replace('_',' ')} @ $${lb.price.toFixed(0)}`; document.getElementById('bosLast').style.color = lb.type.includes('BULL') ? 'var(--long)' : 'var(--short)'; }
-    if (lastH) { document.getElementById('mssSwH').textContent = '$' + lastH.price.toFixed(0); document.getElementById('mssSwH').style.color = 'var(--short)'; }
-    if (lastL) { document.getElementById('mssSwL').textContent = '$' + lastL.price.toFixed(0); document.getElementById('mssSwL').style.color = 'var(--long)'; }
+    
+    if (lm) safeSetText('mssLast', `${lm.type.replace('_',' ')} @ $${lm.price.toFixed(0)}`, lm.type.includes('BULL') ? 'var(--long)' : 'var(--short)');
+    if (lb) safeSetText('bosLast', `${lb.type.replace('_',' ')} @ $${lb.price.toFixed(0)}`, lb.type.includes('BULL') ? 'var(--long)' : 'var(--short)');
+    if (lastH) safeSetText('mssSwH', '$' + lastH.price.toFixed(0), 'var(--short)');
+    if (lastL) safeSetText('mssSwL', '$' + lastL.price.toFixed(0), 'var(--long)');
 }
 
 // ============================================================
@@ -1682,12 +2398,13 @@ function detectFVGs(candles) {
 
 function renderFVGList() {
     const el = document.getElementById('fvgList');
+    if (!el) return;
+    
     const threshold = FVG_THRESHOLDS[STATE.currentTF] || 0.005;
     const open = STATE.fvgs.filter(f => f.status !== 'filled').slice(-8);
-    document.getElementById('fvgCount').textContent = open.length;
     
     if (!open.length) { 
-        el.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine FVGs >${(threshold*100).toFixed(1)}%</div>`; 
+        el.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">No FVGs >${(threshold*100).toFixed(1)}%</div>`; 
         return; 
     }
     
@@ -1750,12 +2467,26 @@ function detectLiquidityLevels() {
 
 function renderLiquidity() {
     const el = document.getElementById('liqList');
-    if (!STATE.liquidityLevels.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">Keine Cluster</div>'; return; }
+    if (!el) return;
+    
+    if (!STATE.liquidityLevels.length) { 
+        el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:8px;font-size:10px">No clusters</div>'; 
+        return; 
+    }
+    
     const mx = Math.max(...STATE.liquidityLevels.map(l => l.touches));
+    
     el.innerHTML = STATE.liquidityLevels.map(l => {
         const dist = ((l.price / STATE.price - 1) * 100).toFixed(2);
         const above = l.price > STATE.price;
-        return `<div class="liq-row"><span style="color:${above ? 'var(--short)' : 'var(--long)'};font-weight:600;min-width:45px">${l.type}</span><span style="min-width:70px">$${l.price.toFixed(0)}</span><div class="liq-bar-wrap"><div class="liq-bar-fill ${above ? 'above' : 'below'}" style="width:${(l.touches/mx*100).toFixed(0)}%"></div></div><span style="color:var(--text-2);min-width:45px;text-align:right">${dist}%</span></div>`;
+        return `<div class="liq-row">
+            <span style="color:${above ? 'var(--short)' : 'var(--long)'};font-weight:600;min-width:45px">${l.type}</span>
+            <span style="min-width:70px">$${l.price.toFixed(0)}</span>
+            <div class="liq-bar-wrap">
+                <div class="liq-bar-fill ${above ? 'above' : 'below'}" style="width:${(l.touches/mx*100).toFixed(0)}%"></div>
+            </div>
+            <span style="color:var(--text-2);min-width:45px;text-align:right">${dist}%</span>
+        </div>`;
     }).join('');
 }
 
@@ -1791,37 +2522,26 @@ function analyzeWyckoffMTF() {
     
     STATE.wyckoff.combined = combined;
     
-    const wk4h = document.getElementById('wk4h');
-    const wk15m = document.getElementById('wk15m');
-    const wkConf = document.getElementById('wkConf');
+    safeSetText('wk4h', htf.subPhase || htf.phase, htf.phase === 'accumulation' ? 'var(--long)' : htf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)');
+    safeSetText('wk15m', ltf.subPhase || ltf.phase, ltf.phase === 'accumulation' ? 'var(--long)' : ltf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)');
     
-    wk4h.textContent = htf.subPhase || htf.phase;
-    wk4h.style.color = htf.phase === 'accumulation' ? 'var(--long)' : htf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)';
+    let wkConfText = 'NEUTRAL';
+    let wkConfColor = 'var(--text-2)';
+    if (combined === 'strong_bull') { wkConfText = '✓ BULL ALIGN'; wkConfColor = 'var(--long)'; }
+    else if (combined === 'strong_bear') { wkConfText = '✓ BEAR ALIGN'; wkConfColor = 'var(--short)'; }
+    else if (combined === 'conflict') { wkConfText = '⚠ CONFLICT'; wkConfColor = 'var(--warn)'; }
+    safeSetText('wkConf', wkConfText, wkConfColor);
     
-    wk15m.textContent = ltf.subPhase || ltf.phase;
-    wk15m.style.color = ltf.phase === 'accumulation' ? 'var(--long)' : ltf.phase === 'distribution' ? 'var(--short)' : 'var(--text-2)';
-    
-    if (combined === 'strong_bull') {
-        wkConf.textContent = '✓ BULL ALIGN';
-        wkConf.style.color = 'var(--long)';
-    } else if (combined === 'strong_bear') {
-        wkConf.textContent = '✓ BEAR ALIGN';
-        wkConf.style.color = 'var(--short)';
-    } else if (combined === 'conflict') {
-        wkConf.textContent = '⚠ CONFLICT';
-        wkConf.style.color = 'var(--warn)';
-    } else {
-        wkConf.textContent = 'NEUTRAL';
-        wkConf.style.color = 'var(--text-2)';
+    const wkBar = document.getElementById('wkBar');
+    if (wkBar) {
+        const pm = { 'Range':'B','Spring':'C','Test':'C','SOS':'D','Upthrust':'C','LPSY':'C','SOW':'D' };
+        const ap = pm[htf.subPhase] || 'A';
+        wkBar.querySelectorAll('.wk-phase').forEach(e => { 
+            e.classList.remove('active','current'); 
+            if (htf.phase !== 'none' && e.dataset.p <= ap) e.classList.add('active'); 
+            if (htf.phase !== 'none' && e.dataset.p === ap) e.classList.add('current'); 
+        });
     }
-    
-    const pm = { 'Range':'B','Spring':'C','Test':'C','SOS':'D','Upthrust':'C','LPSY':'C','SOW':'D' };
-    const ap = pm[htf.subPhase] || 'A';
-    document.querySelectorAll('#wkBar .wk-phase').forEach(e => { 
-        e.classList.remove('active','current'); 
-        if (htf.phase !== 'none' && e.dataset.p <= ap) e.classList.add('active'); 
-        if (htf.phase !== 'none' && e.dataset.p === ap) e.classList.add('current'); 
-    });
 }
 
 function analyzeSingleWyckoff(data, tf) {
@@ -1850,7 +2570,7 @@ function analyzeSingleWyckoff(data, tf) {
 }
 
 // ============================================================
-// SIGNAL GENERATION
+// SIGNAL GENERATION WITH CATEGORIES
 // ============================================================
 function generateSignals() {
     const candles = STATE.tfData[STATE.currentTF];
@@ -1872,18 +2592,18 @@ function generateSignals() {
         renderNoSignal(0);
         return;
     }
-    document.getElementById('cfHTF').textContent = STATE.htfBias;
-    document.getElementById('cfHTF').style.color = STATE.htfBias === 'BULLISH' ? 'var(--long)' : 'var(--short)';
+    updateConfluenceUI('cfHTF', STATE.htfBias, STATE.htfBias === 'BULLISH' ? 'var(--long)' : 'var(--short)');
 
     // 2. FVG
     const nbf = STATE.fvgs.find(f => f.type === 'bullish' && f.status === 'open' && price >= f.bottom && price <= f.top * 1.005);
     const nbr = STATE.fvgs.find(f => f.type === 'bearish' && f.status === 'open' && price <= f.top && price >= f.bottom * 0.995);
     if (nbf) { ls += 2; reasons.long.push(`FVG ${(nbf.size*100).toFixed(1)}%`); }
     if (nbr) { ss += 2; reasons.short.push(`FVG ${(nbr.size*100).toFixed(1)}%`); }
-    document.getElementById('cfFVG').textContent = nbf ? `✓ ${(nbf.size*100).toFixed(1)}%` : nbr ? `✓ ${(nbr.size*100).toFixed(1)}%` : '--';
-    document.getElementById('cfFVG').style.color = nbf ? 'var(--long)' : nbr ? 'var(--short)' : 'var(--text-3)';
+    const fvgText = nbf ? `✓ ${(nbf.size*100).toFixed(1)}%` : nbr ? `✓ ${(nbr.size*100).toFixed(1)}%` : '--';
+    const fvgColor = nbf ? 'var(--long)' : nbr ? 'var(--short)' : 'var(--text-3)';
+    updateConfluenceUI('cfFVG', fvgText, fvgColor);
 
-    // 3. Fibonacci Level Check
+    // 3. Fibonacci
     const fib = STATE.fibLevels;
     let nearFib = false;
     let fibLevel = '';
@@ -1898,16 +2618,14 @@ function generateSignals() {
         else if (dist50 < 0.002) { nearFib = true; fibLevel = '50%'; ls += 0.5; ss += 0.5; }
     }
     
-    document.getElementById('cfFib').textContent = nearFib ? `✓ ${fibLevel}` : '—';
-    document.getElementById('cfFib').style.color = nearFib ? 'var(--accent)' : 'var(--text-3)';
+    updateConfluenceUI('cfFib', nearFib ? `✓ ${fibLevel}` : '—', nearFib ? 'var(--accent)' : 'var(--text-3)');
 
     // 4. OB
     const nbo = STATE.orderBlocks.find(ob => ob.type === 'bullish' && price >= ob.low && price <= ob.high * 1.002);
     const nso = STATE.orderBlocks.find(ob => ob.type === 'bearish' && price <= ob.high && price >= ob.low * 0.998);
     if (nbo) { ls += 1.5; reasons.long.push('Bull OB'); }
     if (nso) { ss += 1.5; reasons.short.push('Bear OB'); }
-    document.getElementById('cfOB').textContent = nbo ? '✓ BULL' : nso ? '✓ BEAR' : '--';
-    document.getElementById('cfOB').style.color = nbo ? 'var(--long)' : nso ? 'var(--short)' : 'var(--text-3)';
+    updateConfluenceUI('cfOB', nbo ? '✓ BULL' : nso ? '✓ BEAR' : '--', nbo ? 'var(--long)' : nso ? 'var(--short)' : 'var(--text-3)');
 
     // 5. MSS/BOS
     const rm = STATE.mssEvents.filter(m => candles.length - m.index < 20);
@@ -1916,8 +2634,9 @@ function generateSignals() {
         if (lm.type === 'MSS_BULL') { ls += 2; reasons.long.push('MSS Bullish'); }
         if (lm.type === 'MSS_BEAR') { ss += 2; reasons.short.push('MSS Bearish'); }
     }
-    document.getElementById('cfMSS').textContent = lm ? lm.type.replace('_',' ') : STATE.currentTrend.toUpperCase();
-    document.getElementById('cfMSS').style.color = (lm && lm.type.includes('BULL')) || STATE.currentTrend === 'bullish' ? 'var(--long)' : (lm && lm.type.includes('BEAR')) || STATE.currentTrend === 'bearish' ? 'var(--short)' : 'var(--text-3)';
+    const mssText = lm ? lm.type.replace('_',' ') : STATE.currentTrend.toUpperCase();
+    const mssColor = (lm && lm.type.includes('BULL')) || STATE.currentTrend === 'bullish' ? 'var(--long)' : (lm && lm.type.includes('BEAR')) || STATE.currentTrend === 'bearish' ? 'var(--short)' : 'var(--text-3)';
+    updateConfluenceUI('cfMSS', mssText, mssColor);
 
     // 6. CANDLE PATTERNS
     const patterns = detectCandlePatterns(candles);
@@ -1931,10 +2650,9 @@ function generateSignals() {
             else if (p.type === 'bear') { ss += p.strength; patternScore += p.strength; reasons.short.push(p.name); }
         });
     }
-    document.getElementById('cfPattern').textContent = patterns ? patterns.map(p => p.name).join(', ') : '--';
-    document.getElementById('cfPattern').style.color = patterns ? (patterns[0].type === 'bull' ? 'var(--long)' : patterns[0].type === 'bear' ? 'var(--short)' : 'var(--text-2)') : 'var(--text-3)';
+    updateConfluenceUI('cfPattern', patterns ? patterns.map(p => p.name).join(', ') : '--', patterns ? (patterns[0].type === 'bull' ? 'var(--long)' : patterns[0].type === 'bear' ? 'var(--short)' : 'var(--text-2)') : 'var(--text-3)');
 
-    // 7. Wyckoff MTF
+    // 7. Wyckoff
     const wk = STATE.wyckoff;
     if (wk.combined === 'strong_bull') { ls += 2; reasons.long.push('WK MTF Bull'); }
     else if (wk.combined === 'strong_bear') { ss += 2; reasons.short.push('WK MTF Bear'); }
@@ -1944,34 +2662,43 @@ function generateSignals() {
         ls -= 1;
         ss -= 1;
     }
-    document.getElementById('cfWyckoff').textContent = wk.combined === 'strong_bull' ? '✓ ALIGN' : wk.combined === 'strong_bear' ? '✓ ALIGN' : wk.combined === 'conflict' ? '⚠ CONFLICT' : 'NEUTRAL';
-    document.getElementById('cfWyckoff').style.color = wk.combined.includes('bull') ? 'var(--long)' : wk.combined.includes('bear') ? 'var(--short)' : wk.combined === 'conflict' ? 'var(--warn)' : 'var(--text-3)';
+    const wkText = wk.combined === 'strong_bull' ? '✓ ALIGN' : wk.combined === 'strong_bear' ? '✓ ALIGN' : wk.combined === 'conflict' ? '⚠ CONFLICT' : 'NEUTRAL';
+    const wkColor = wk.combined.includes('bull') ? 'var(--long)' : wk.combined.includes('bear') ? 'var(--short)' : wk.combined === 'conflict' ? 'var(--warn)' : 'var(--text-3)';
+    updateConfluenceUI('cfWyckoff', wkText, wkColor);
 
     // 8. Liq sweep
     const sweep = detectLiquiditySweep(candles);
     if (sweep === 'bull') { ls += 1.5; reasons.long.push('Liq Sweep'); }
     if (sweep === 'bear') { ss += 1.5; reasons.short.push('Liq Sweep'); }
-    document.getElementById('cfLiq').textContent = sweep ? sweep.toUpperCase()+' SWEEP' : '--';
-    document.getElementById('cfLiq').style.color = sweep === 'bull' ? 'var(--long)' : sweep === 'bear' ? 'var(--short)' : 'var(--text-3)';
+    updateConfluenceUI('cfLiq', sweep ? sweep.toUpperCase()+' SWEEP' : '--', sweep === 'bull' ? 'var(--long)' : sweep === 'bear' ? 'var(--short)' : 'var(--text-3)');
 
-    // 9. Volume
+    // 9. RSI Divergence
+    const div = STATE.divergences[STATE.divergences.length - 1];
+    if (div && candles.length - div.endIndex < 5) {
+        if (div.type === 'bullish') { ls += 2; reasons.long.push('RSI Div'); }
+        if (div.type === 'bearish') { ss += 2; reasons.short.push('RSI Div'); }
+        updateConfluenceUI('cfRSI', `✓ ${div.type.toUpperCase()}`, div.type === 'bullish' ? 'var(--long)' : 'var(--short)');
+    } else {
+        updateConfluenceUI('cfRSI', '--', 'var(--text-3)');
+    }
+
+    // 10. Volume
     const avgV = candles.slice(-20).reduce((a,c)=>a+c.v,0)/20;
     const lastV = candles[candles.length-1].v, vc = lastV > avgV * 1.3;
     if (vc) { 
         if (candles[candles.length-1].c > candles[candles.length-1].o) { ls += 1; reasons.long.push('Vol ✓'); } 
         else { ss += 1; reasons.short.push('Vol ✓'); }
     }
-    document.getElementById('cfVol').textContent = vc ? `✓ ${(lastV/avgV).toFixed(1)}x` : `${(lastV/avgV).toFixed(1)}x`;
-    document.getElementById('cfVol').style.color = vc ? 'var(--long)' : 'var(--text-3)';
+    updateConfluenceUI('cfVol', vc ? `✓ ${(lastV/avgV).toFixed(1)}x` : `${(lastV/avgV).toFixed(1)}x`, vc ? 'var(--long)' : 'var(--text-3)');
 
-    // 10. TREND ALIGNMENT
+    // 11. TREND ALIGNMENT
     let trendWarning = false;
     if (STATE.currentTrend === 'bullish' && ss > ls) {
-        warnings.short.push('Gegen Trend (Bull) (-1.5)');
+        warnings.short.push('Against Trend (Bull) (-1.5)');
         ss -= 1.5;
         trendWarning = true;
     } else if (STATE.currentTrend === 'bearish' && ls > ss) {
-        warnings.long.push('Gegen Trend (Bear) (-1.5)');
+        warnings.long.push('Against Trend (Bear) (-1.5)');
         ls -= 1.5;
         trendWarning = true;
     }
@@ -1980,16 +2707,27 @@ function generateSignals() {
     ls += Math.max(0, tb); 
     ss += Math.max(0, -tb);
     
-    document.getElementById('cfTrend').textContent = trendWarning ? '⚠ ' + STATE.currentTrend.toUpperCase() : '✓ ' + STATE.currentTrend.toUpperCase();
-    document.getElementById('cfTrend').style.color = trendWarning ? 'var(--warn)' : STATE.currentTrend === 'bullish' ? 'var(--long)' : 'var(--short)';
+    const trendText = trendWarning ? '⚠ ' + STATE.currentTrend.toUpperCase() : '✓ ' + STATE.currentTrend.toUpperCase();
+    const trendColor = trendWarning ? 'var(--warn)' : STATE.currentTrend === 'bullish' ? 'var(--long)' : 'var(--short)';
+    updateConfluenceUI('cfTrend', trendText, trendColor);
 
-    // Decision
+    // Decision with Categories
     const dir = ls > ss ? 'long' : 'short';
     let score = dir === 'long' ? ls : ss;
     let rl = dir === 'long' ? reasons.long : reasons.short;
     let wl = dir === 'long' ? warnings.long : warnings.short;
     
-    if (score >= 7.5 && rl.length >= 3) {
+    // Kategorisierung
+    let category = null;
+    if (score >= 9.5 && rl.length >= 5) {
+        category = 'safe';
+    } else if (score >= 7.5 && rl.length >= 3) {
+        category = 'neutral';
+    } else if (score >= 5.0 && rl.length >= 2) {
+        category = 'risky';
+    }
+    
+    if (category) {
         const entry = price;
         const swings = STATE.swingPoints || [];
         let sl;
@@ -2012,12 +2750,12 @@ function generateSignals() {
         const tp2 = dir === 'long' ? entry + slDist * 3.5 : entry - slDist * 3.5;
         const rr = Math.abs(tp1 - entry) / slDist;
         
-        if (rr < 1.9) {
+        if (rr < 1.5) {
             renderNoSignal(score);
             return;
         }
         
-        let quality = score >= 9 ? 'A+' : score >= 8 ? 'A' : 'B';
+        let quality = category === 'safe' ? 'A+' : category === 'neutral' ? 'A' : 'B';
         if (wl.length > 0 && quality === 'A+') quality = 'A';
         else if (wl.length > 0 && quality === 'A') quality = 'B';
         
@@ -2029,6 +2767,7 @@ function generateSignals() {
             tp2, 
             rr, 
             quality, 
+            category,
             score, 
             reasons: rl, 
             warnings: wl,
@@ -2041,18 +2780,23 @@ function generateSignals() {
         
         STATE.activeSignal = sig;
         STATE.signalCooldown = Date.now() + STATE.COOLDOWN_MS;
-        STATE.signalCount++;
+        STATE.signalCount[category]++;
         renderActiveSignal(sig); 
         addSignalToHistory(sig);
-        showToast(dir, quality, entry, sl, tp1, rl.join(', '), wl.length > 0);
+        showToast(dir, quality, entry, sl, tp1, rl.join(', '), wl.length > 0, category);
+        
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(`${dir.toUpperCase()} SIGNAL (${quality})`, { 
-                body: `Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | ${wl.length > 0 ? '⚠ Mit Warnungen' : ''}` 
+            new Notification(`${dir.toUpperCase()} ${category.toUpperCase()} SIGNAL (${quality})`, { 
+                body: `Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | ${wl.length > 0 ? '⚠ With warnings' : ''}` 
             });
         }
     } else { 
         renderNoSignal(Math.max(ls, ss)); 
     }
+}
+
+function updateConfluenceUI(id, text, color) {
+    safeSetText(id, text, color);
 }
 
 function detectLiquiditySweep(candles) {
@@ -2070,128 +2814,162 @@ function detectLiquiditySweep(candles) {
 // ============================================================
 function renderActiveSignal(sig) {
     const hasWarnings = sig.warnings && sig.warnings.length > 0;
-    document.getElementById('activeSignalCard').className = `signal-card active-${sig.direction} ${hasWarnings ? 'warning' : ''}`;
-    document.getElementById('sigDirection').textContent = sig.direction.toUpperCase();
-    document.getElementById('sigDirection').style.color = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
-    document.getElementById('sigQuality').textContent = sig.quality;
-    document.getElementById('sigQuality').className = `signal-quality ${sig.quality === 'A+' || sig.quality === 'A' ? 'quality-a' : sig.quality === 'B' ? 'quality-b' : 'quality-c'}`;
-    document.getElementById('sigEntry').textContent = '$' + sig.entry.toFixed(0);
-    document.getElementById('sigSL').textContent = '$' + sig.sl.toFixed(0); 
-    document.getElementById('sigSL').style.color = 'var(--short)';
-    document.getElementById('sigTP1').textContent = '$' + sig.tp1.toFixed(0); 
-    document.getElementById('sigTP1').style.color = 'var(--long)';
-    document.getElementById('sigTP2').textContent = '$' + sig.tp2.toFixed(0); 
-    document.getElementById('sigTP2').style.color = 'var(--long)';
-    document.getElementById('sigRR').textContent = '1:' + sig.rr.toFixed(1); 
-    document.getElementById('sigRR').style.color = sig.rr >= 2 ? 'var(--long)' : sig.rr >= 1.5 ? 'var(--warn)' : 'var(--short)';
-    document.getElementById('sigConf').textContent = sig.score.toFixed(1) + '/12';
-    document.getElementById('sigPattern').textContent = sig.pattern || '--';
-    document.getElementById('sigPattern').style.color = sig.pattern ? 'var(--accent)' : 'var(--text-3)';
-    document.getElementById('sigReason').textContent = sig.reasons.slice(0,3).join(', '); 
-    document.getElementById('sigReason').style.color = 'var(--text-1)';
-    
-    const warnEl = document.getElementById('sigWarning');
-    if (hasWarnings) {
-        warnEl.textContent = '⚠ ' + sig.warnings.join(', ');
-        warnEl.style.display = 'block';
-    } else {
-        warnEl.style.display = 'none';
+    const card = document.getElementById('activeSignalCard');
+    if (card) {
+        card.className = `signal-card active-${sig.direction} ${sig.category}`;
+        card.onclick = () => openSignalModal(sig);
     }
     
-    document.getElementById('signalBadge').textContent = sig.direction.toUpperCase() + (hasWarnings ? ' ⚠' : '');
-    document.getElementById('signalBadge').style.background = sig.direction === 'long' ? 'var(--long-dim)' : 'var(--short-dim)';
-    document.getElementById('signalBadge').style.color = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
-    document.getElementById('signalCount').textContent = STATE.signalCount;
+    safeSetText('sigDirection', sig.direction.toUpperCase(), sig.direction === 'long' ? 'var(--long)' : 'var(--short)');
     
-    document.getElementById('activeSignalCard').onclick = () => openSignalModal(sig);
+    const sq = document.getElementById('sigQuality');
+    if (sq) {
+        sq.textContent = sig.quality;
+        sq.className = `signal-quality quality-${sig.category}`;
+    }
+    
+    safeSetText('sigEntry', '$' + sig.entry.toFixed(0));
+    safeSetText('sigSL', '$' + sig.sl.toFixed(0), 'var(--short)');
+    safeSetText('sigTP1', '$' + sig.tp1.toFixed(0), 'var(--long)');
+    safeSetText('sigTP2', '$' + sig.tp2.toFixed(0), 'var(--long)');
+    safeSetText('sigRR', '1:' + sig.rr.toFixed(1), sig.rr >= 2 ? 'var(--long)' : sig.rr >= 1.5 ? 'var(--warn)' : 'var(--short)');
+    safeSetText('sigCategory', sig.category.toUpperCase(), `var(--${sig.category})`);
+    safeSetText('sigConf', sig.score.toFixed(1) + '/12');
+    safeSetText('sigPattern', sig.pattern || '--', sig.pattern ? 'var(--accent)' : 'var(--text-3)');
+    safeSetText('sigReason', sig.reasons.slice(0,3).join(', '), 'var(--text-1)');
+    
+    const warnEl = document.getElementById('sigWarning');
+    if (warnEl) {
+        if (hasWarnings) {
+            warnEl.textContent = '⚠ ' + sig.warnings.join(', ');
+            warnEl.style.display = 'block';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    }
 }
 
 function renderNoSignal(score) {
     const card = document.getElementById('activeSignalCard');
-    card.className = 'signal-card';
-    card.onclick = null;
-    document.getElementById('sigDirection').textContent = 'WARTE...'; 
-    document.getElementById('sigDirection').style.color = 'var(--text-3)';
-    document.getElementById('sigQuality').textContent = score > 0 ? score.toFixed(0)+'/12' : '--'; 
-    document.getElementById('sigQuality').className = 'signal-quality quality-none';
-    document.getElementById('sigPattern').textContent = '--';
-    document.getElementById('sigPattern').style.color = 'var(--text-3)';
-    document.getElementById('sigWarning').style.display = 'none';
-    document.getElementById('signalBadge').textContent = 'SCANNING'; 
-    document.getElementById('signalBadge').style.background = 'var(--bg-3)'; 
-    document.getElementById('signalBadge').style.color = 'var(--text-3)';
+    if (card) {
+        card.className = 'signal-card';
+        card.onclick = null;
+    }
+    
+    safeSetText('sigDirection', t('signal_waiting'), 'var(--text-3)');
+    
+    const sq = document.getElementById('sigQuality');
+    if (sq) {
+        sq.textContent = score > 0 ? score.toFixed(0)+'/12' : '--';
+        sq.className = 'signal-quality quality-none';
+    }
+    
+    safeSetText('sigCategory', '--');
+    safeSetText('sigPattern', '--', 'var(--text-3)');
+    
+    const warnEl = document.getElementById('sigWarning');
+    if (warnEl) warnEl.style.display = 'none';
 }
 
 function updateCooldownBar() { 
     const r = STATE.signalCooldown - Date.now(); 
-    document.getElementById('cooldownFill').style.width = Math.max(0, r/STATE.COOLDOWN_MS*100) + '%'; 
+    const cf = document.getElementById('cooldownFill');
+    if (cf) cf.style.width = Math.max(0, r/STATE.COOLDOWN_MS*100) + '%'; 
+}
+
+// ============================================================
+// SIGNAL HISTORY WITH TABS & FILTER
+// ============================================================
+function setHistoryTab(tab) {
+    STATE.historyTab = tab;
+    const tabActive = document.getElementById('tabActive');
+    const tabClosed = document.getElementById('tabClosed');
+    if (tabActive) tabActive.classList.toggle('active', tab === 'active');
+    if (tabClosed) tabClosed.classList.toggle('active', tab === 'closed');
+    renderSignalHistory();
+}
+
+function setHistoryFilter(filter) {
+    STATE.historyFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active'));
+    const filterBtn = document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1));
+    if (filterBtn) filterBtn.classList.add('active');
+    renderSignalHistory();
 }
 
 function addSignalToHistory(sig) { 
     STATE.signalHistory.unshift(sig); 
-    STATE.historyPage = 0; 
     renderSignalHistory(); 
+    updateSessionStats();
 }
 
 function renderSignalHistory() {
     const el = document.getElementById('signalHistory'); 
-    const btn = document.getElementById('loadMoreBtn');
-    document.getElementById('histBadge').textContent = STATE.signalHistory.length;
+    if (!el) return;
     
-    if (!STATE.signalHistory.length) { 
-        el.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">Noch keine Signale</div>'; 
-        btn.style.display = 'none';
+    let filtered = STATE.signalHistory;
+    
+    if (STATE.historyTab === 'active') {
+        filtered = filtered.filter(s => s.status === 'active');
+    } else {
+        filtered = filtered.filter(s => ['tp1','tp2','sl','expired'].includes(s.status));
+    }
+    
+    if (STATE.historyFilter === 'long') filtered = filtered.filter(s => s.direction === 'long');
+    if (STATE.historyFilter === 'short') filtered = filtered.filter(s => s.direction === 'short');
+    if (STATE.historyFilter === 'risky') filtered = filtered.filter(s => s.category === 'risky');
+    if (STATE.historyFilter === 'safe') filtered = filtered.filter(s => s.category === 'safe');
+    
+    if (!filtered.length) { 
+        el.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:12px;font-size:10px;">${t('signal_no_signal')}</div>`; 
         return; 
     }
     
-    const start = 0;
-    const end = (STATE.historyPage + 1) * STATE.historyPerPage;
-    const visible = STATE.signalHistory.slice(start, end);
+    const visible = filtered.slice(0, 20);
     
-    el.innerHTML = visible.map((sig, idx) => {
-        const time = new Date(sig.time).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    el.innerHTML = visible.map((sig) => {
+        const time = new Date(sig.time).toLocaleTimeString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US',{hour:'2-digit',minute:'2-digit'});
         const dc = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
-        let rt = 'OFFEN', rc = 'var(--warn)';
-        if (sig.status === 'tp1') { rt = 'TP1 ✓'; rc = 'var(--long)'; }
-        else if (sig.status === 'tp2') { rt = 'TP2 ✓'; rc = 'var(--long)'; }
-        else if (sig.status === 'sl') { rt = 'SL ✗'; rc = 'var(--short)'; }
-        else if (sig.status === 'expired') { rt = 'EXP'; rc = 'var(--text-3)'; }
+        let rt = t('status_active'), rc = 'var(--warn)';
+        if (sig.status === 'tp1') { rt = t('status_tp1'); rc = 'var(--long)'; }
+        else if (sig.status === 'tp2') { rt = t('status_tp2'); rc = 'var(--long)'; }
+        else if (sig.status === 'sl') { rt = t('status_sl'); rc = 'var(--short)'; }
+        else if (sig.status === 'expired') { rt = t('status_expired'); rc = 'var(--text-3)'; }
         
         const hasWarn = sig.warnings && sig.warnings.length > 0;
         
-        return `<div class="history-item ${hasWarn ? 'warning' : ''}" onclick="openSignalModal(STATE.signalHistory[${idx}])">
-            <span style="color:${dc};font-weight:700">${sig.direction.toUpperCase()}${hasWarn ? ' ⚠' : ''}</span>
+        return `<div class="history-item ${sig.category} ${hasWarn ? 'warning' : ''}" onclick="openSignalModalByTime(${sig.time})">
+            <span style="color:${dc};font-weight:700">${sig.direction.toUpperCase().slice(0,4)}${hasWarn ? ' ⚠' : ''}</span>
             <span style="color:var(--text-2)">$${sig.entry.toFixed(0)} | ${sig.quality}</span>
             <span style="color:${rc};font-weight:600;text-align:right">${rt}</span>
             <span style="color:var(--text-3);text-align:right">${time}</span>
         </div>`;
     }).join('');
-    
-    if (end < STATE.signalHistory.length) {
-        btn.style.display = 'block';
-        btn.textContent = `Mehr laden (${STATE.signalHistory.length - end} verbleibend)`;
-        btn.disabled = false;
-    } else {
-        btn.style.display = 'none';
-    }
 }
 
-function loadMoreHistory() {
-    STATE.historyPage++;
-    renderSignalHistory();
+function openSignalModalByTime(time) {
+    const sig = STATE.signalHistory.find(s => s.time === time);
+    if (sig) openSignalModal(sig);
 }
 
 function openSignalModal(sig) {
+    if (!sig) return;
+    
     const modal = document.getElementById('signalModal');
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
     
+    if (!modal || !title || !body) return;
+    
     const dirColor = sig.direction === 'long' ? 'var(--long)' : 'var(--short)';
-    const statusText = sig.status === 'active' ? 'AKTIV' : 
-                       sig.status === 'tp1' ? 'TP1 ERREICHT' :
-                       sig.status === 'tp2' ? 'TP2 ERREICHT' :
-                       sig.status === 'sl' ? 'STOP LOSS' :
-                       sig.status === 'expired' ? 'ABGELAUFEN' : 'UNBEKANNT';
+    const statusMap = {
+        'active': t('status_active'),
+        'tp1': t('status_tp1'),
+        'tp2': t('status_tp2'),
+        'sl': t('status_sl'),
+        'expired': t('status_expired')
+    };
+    const statusText = statusMap[sig.status] || sig.status;
     
     let pnlHtml = '';
     if (sig.status === 'active') {
@@ -2199,48 +2977,51 @@ function openSignalModal(sig) {
             ((STATE.price - sig.entry) / (sig.entry - sig.sl)).toFixed(2) :
             ((sig.entry - STATE.price) / (sig.sl - sig.entry)).toFixed(2);
         const pnlColor = parseFloat(currentPnL) >= 0 ? 'pnl-positive' : 'pnl-negative';
-        pnlHtml = `<div class="modal-row"><span class="modal-label">Aktuelles R</span><span class="modal-value ${pnlColor}">${currentPnL}R</span></div>`;
+        pnlHtml = `<div class="modal-row"><span class="modal-label">Current R</span><span class="modal-value ${pnlColor}">${currentPnL}R</span></div>`;
     } else {
         const exitPrice = sig.status === 'tp1' ? sig.tp1 : sig.status === 'tp2' ? sig.tp2 : sig.status === 'sl' ? sig.sl : sig.entry;
         const pnl = sig.direction === 'long' ? 
             ((exitPrice - sig.entry) / (sig.entry - sig.sl)).toFixed(2) :
             ((sig.entry - exitPrice) / (sig.sl - sig.entry)).toFixed(2);
         const pnlColor = parseFloat(pnl) >= 0 ? 'pnl-positive' : 'pnl-negative';
-        pnlHtml = `<div class="modal-row"><span class="modal-label">Ergebnis</span><span class="modal-value ${pnlColor}">${pnl}R</span></div>`;
+        pnlHtml = `<div class="modal-row"><span class="modal-label">Result</span><span class="modal-value ${pnlColor}">${pnl}R</span></div>`;
     }
     
     const hasWarn = sig.warnings && sig.warnings.length > 0;
     const warnHtml = hasWarn ? `<div class="modal-section" style="border:1px solid var(--warn);border-radius:4px;padding:10px;background:rgba(255,193,7,0.05)">
-        <div class="modal-section-title" style="color:var(--warn)">⚠ Warnungen</div>
+        <div class="modal-section-title" style="color:var(--warn)">⚠ Warnings</div>
         ${sig.warnings.map(w => `<div class="modal-row" style="color:var(--warn)"><span class="modal-label">•</span><span class="modal-value">${w}</span></div>`).join('')}
     </div>` : '';
     
-    title.innerHTML = `<span style="color:${dirColor}">${sig.direction.toUpperCase()} SIGNAL (${sig.quality})</span>`;
+    const catColor = sig.category === 'risky' ? 'var(--risky)' : sig.category === 'neutral' ? 'var(--neutral)' : 'var(--safe)';
+    
+    title.innerHTML = `<span style="color:${dirColor}">${sig.direction.toUpperCase()} ${sig.category.toUpperCase()} (${sig.quality})</span>`;
     title.innerHTML += `<span style="font-size:9px;color:var(--text-3);margin-left:12px">${statusText}</span>`;
     
     body.innerHTML = `
         <div class="modal-section">
             <div class="modal-section-title">Trade Details</div>
+            <div class="modal-row"><span class="modal-label">Category</span><span class="modal-value" style="color:${catColor}">${sig.category.toUpperCase()}</span></div>
             <div class="modal-row"><span class="modal-label">Entry</span><span class="modal-value">$${sig.entry.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">Stop Loss</span><span class="modal-value" style="color:var(--short)">$${sig.sl.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">Take Profit 1</span><span class="modal-value" style="color:var(--long)">$${sig.tp1.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">Take Profit 2</span><span class="modal-value" style="color:var(--long)">$${sig.tp2.toFixed(2)}</span></div>
-            <div class="modal-row"><span class="modal-label">R:R Verhältnis</span><span class="modal-value">1:${sig.rr.toFixed(2)}</span></div>
+            <div class="modal-row"><span class="modal-label">R:R Ratio</span><span class="modal-value">1:${sig.rr.toFixed(2)}</span></div>
             <div class="modal-row"><span class="modal-label">Candle Pattern</span><span class="modal-value" style="color:var(--accent)">${sig.pattern || '--'}</span></div>
             ${pnlHtml}
         </div>
         
         <div class="modal-section">
-            <div class="modal-section-title">Konfluenz (${sig.score.toFixed(1)} Punkte)</div>
+            <div class="modal-section-title">Confluence (${sig.score.toFixed(1)} Points)</div>
             ${sig.reasons.map(r => `<div class="modal-row"><span class="modal-label">✓</span><span class="modal-value">${r}</span></div>`).join('')}
         </div>
         
         ${warnHtml}
         
         <div class="modal-section">
-            <div class="modal-section-title">Metadaten</div>
-            <div class="modal-row"><span class="modal-label">Zeitrahmen</span><span class="modal-value">${sig.tf || STATE.currentTF}</span></div>
-            <div class="modal-row"><span class="modal-label">Zeit</span><span class="modal-value">${new Date(sig.time).toLocaleString('de-DE')}</span></div>
+            <div class="modal-section-title">Metadata</div>
+            <div class="modal-row"><span class="modal-label">Timeframe</span><span class="modal-value">${sig.tf || STATE.currentTF}</span></div>
+            <div class="modal-row"><span class="modal-label">Time</span><span class="modal-value">${new Date(sig.time).toLocaleString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US')}</span></div>
             <div class="modal-row"><span class="modal-label">ATR</span><span class="modal-value">$${sig.atr ? sig.atr.toFixed(2) : '--'}</span></div>
         </div>
     `;
@@ -2249,7 +3030,8 @@ function openSignalModal(sig) {
 }
 
 function closeModal() {
-    document.getElementById('signalModal').classList.remove('active');
+    const modal = document.getElementById('signalModal');
+    if (modal) modal.classList.remove('active');
 }
 
 function trackSignalOutcomes() {
@@ -2274,26 +3056,53 @@ function trackSignalOutcomes() {
             const col = isWin ? 'var(--long)' : 'var(--short)';
             const t = document.createElement('div');
             t.className = `toast ${isWin ? 'long-toast' : 'short-toast'}`;
-            t.innerHTML = `<div class="toast-title" style="color:${col}">${sig.direction.toUpperCase()} ${label}</div><div class="toast-body">Entry $${sig.entry.toFixed(0)} | Exit ~$${STATE.price.toFixed(0)}${sig.warnings && sig.warnings.length > 0 ? '<br>⚠ Hatte Warnungen' : ''}</div><div class="toast-time">${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>`;
+            t.innerHTML = `<div class="toast-title" style="color:${col}">${sig.direction.toUpperCase()} ${label}</div><div class="toast-body">Entry $${sig.entry.toFixed(0)} | Exit ~$${STATE.price.toFixed(0)}${sig.warnings && sig.warnings.length > 0 ? '<br>⚠ Had warnings' : ''}</div><div class="toast-time">${new Date().toLocaleTimeString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US',{hour:'2-digit',minute:'2-digit'})}</div>`;
             document.getElementById('toastContainer').appendChild(t);
             setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 8000);
         }
     });
-    const closed = STATE.signalHistory.filter(s => ['tp1','tp2','sl'].includes(s.status));
-    if (closed.length) {
-        const wr = (closed.filter(s => s.status === 'tp1' || s.status === 'tp2').length / closed.length * 100).toFixed(0);
-        document.getElementById('liveWinRate').textContent = wr + '%';
-        document.getElementById('liveWinRate').style.color = wr >= 60 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)';
-    }
     if (changed) { renderSignalHistory(); updateSessionStats(); }
 }
 
-function showToast(dir, quality, entry, sl, tp1, reasons, hasWarning) {
-    const c = document.getElementById('toastContainer'), t = document.createElement('div');
+function showToast(dir, quality, entry, sl, tp1, reasons, hasWarning, category) {
+    const c = document.getElementById('toastContainer');
+    if (!c) return;
+    
+    const t = document.createElement('div');
+    const catColor = category === 'risky' ? 'var(--risky)' : category === 'neutral' ? 'var(--neutral)' : 'var(--safe)';
     t.className = `toast ${dir === 'long' ? 'long-toast' : 'short-toast'} ${hasWarning ? 'warn-toast' : ''}`;
-    t.innerHTML = `<div class="toast-title" style="color:${dir === 'long' ? 'var(--long)' : 'var(--short)'}">${dir.toUpperCase()} SIGNAL (${quality})${hasWarning ? ' ⚠' : ''}</div><div class="toast-body">Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | TP: $${tp1.toFixed(0)}<br>${reasons}</div><div class="toast-time">${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
+    t.innerHTML = `<div class="toast-title" style="color:${dir === 'long' ? 'var(--long)' : 'var(--short)'}">${dir.toUpperCase()} ${category.toUpperCase()} (${quality})${hasWarning ? ' ⚠' : ''}</div><div class="toast-body">Entry: $${entry.toFixed(0)} | SL: $${sl.toFixed(0)} | TP: $${tp1.toFixed(0)}<br>${reasons}</div><div class="toast-time">${new Date().toLocaleTimeString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
     c.appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 12000);
+}
+
+// ============================================================
+// CHART STATE MANAGEMENT (PERSIST ZOOM)
+// ============================================================
+function saveChartState() {
+    if (!STATE.chart) return;
+    try {
+        const xScale = STATE.chart.scales.x;
+        const yScale = STATE.chart.scales.y;
+        if (xScale && yScale) {
+            STATE.chartState = {
+                min: xScale.min,
+                max: xScale.max,
+                yMin: yScale.min,
+                yMax: yScale.max
+            };
+        }
+    } catch(e) {}
+}
+
+function restoreChartState() {
+    if (!STATE.chart || !STATE.chartState) return;
+    try {
+        STATE.chart.scales.x.options.min = STATE.chartState.min;
+        STATE.chart.scales.x.options.max = STATE.chartState.max;
+        STATE.chart.scales.y.options.min = STATE.chartState.yMin;
+        STATE.chart.scales.y.options.max = STATE.chartState.yMax;
+    } catch(e) {}
 }
 
 // ============================================================
@@ -2316,12 +3125,18 @@ function getTimeFormat(tf) {
 function syncCharts(sourceChart) {
     if (STATE.isSyncing) return;
     STATE.isSyncing = true;
-    const targetChart = sourceChart === STATE.chart ? STATE.volumeChart : STATE.chart;
-    if (!targetChart) { STATE.isSyncing = false; return; }
-    const xScale = sourceChart.scales.x;
-    targetChart.scales.x.options.min = xScale.min;
-    targetChart.scales.x.options.max = xScale.max;
-    targetChart.update('none');
+    
+    const charts = [STATE.chart, STATE.volumeChart, STATE.rsiChart].filter(c => c && c !== sourceChart);
+    
+    charts.forEach(targetChart => {
+        try {
+            const xScale = sourceChart.scales.x;
+            targetChart.scales.x.options.min = xScale.min;
+            targetChart.scales.x.options.max = xScale.max;
+            targetChart.update('none');
+        } catch(e) {}
+    });
+    
     setTimeout(() => { STATE.isSyncing = false; }, 10);
 }
 
@@ -2331,7 +3146,6 @@ function buildAnnotations() {
     const annotations = {};
     let aid = 0;
 
-    // FVG
     if (STATE.overlays.fvg) {
         STATE.fvgs.filter(f => f.status !== 'filled').slice(-6).forEach(f => {
             annotations['fvg' + aid++] = {
@@ -2342,20 +3156,11 @@ function buildAnnotations() {
                 backgroundColor: f.type === 'bullish' ? 'rgba(0,230,118,0.08)' : 'rgba(255,23,68,0.08)',
                 borderColor: f.type === 'bullish' ? 'rgba(0,230,118,0.4)' : 'rgba(255,23,68,0.4)',
                 borderWidth: 1,
-                borderDash: [3, 3],
-                label: {
-                    display: true,
-                    content: `FVG ${(f.size*100).toFixed(1)}%`,
-                    position: 'start',
-                    font: { size: 8, family: 'JetBrains Mono' },
-                    color: f.type === 'bullish' ? 'rgba(0,230,118,0.8)' : 'rgba(255,23,68,0.8)',
-                    backgroundColor: 'transparent'
-                }
+                borderDash: [3, 3]
             };
         });
     }
 
-    // Fibonacci
     if (STATE.overlays.fib && STATE.fibLevels.levels[618]) {
         const fibColors = {
             0: 'rgba(255,255,255,0.3)',
@@ -2367,7 +3172,6 @@ function buildAnnotations() {
         };
         
         Object.entries(STATE.fibLevels.levels).forEach(([level, price]) => {
-            const levelNum = parseInt(level);
             annotations['fib' + aid++] = {
                 type: 'line',
                 yMin: price,
@@ -2388,62 +3192,6 @@ function buildAnnotations() {
         });
     }
 
-    // Sessions
-    if (STATE.overlays.session) {
-        const candles = STATE.tfData[STATE.currentTF];
-        if (candles && candles.length) {
-            // Asian: 00:00-09:00 UTC (Gold)
-            // London: 09:00-17:00 UTC (Cyan)
-            // NY: 14:00-22:00 UTC (Orange)
-            
-            const sessionColors = {
-                asian: 'rgba(255,215,0,0.05)',
-                london: 'rgba(0,188,212,0.05)',
-                ny: 'rgba(255,87,34,0.05)',
-                overlap: 'rgba(255,87,34,0.1)'
-            };
-            
-            // Finde Session-Bereiche in den aktuellen Daten
-            candles.forEach((c, i) => {
-                if (i % 20 === 0) { // Nur alle 20 Candles prüfen für Performance
-                    const date = new Date(c.t);
-                    const hour = date.getUTCHours();
-                    
-                    let sessionType = null;
-                    if (hour >= 0 && hour < 9) sessionType = 'asian';
-                    else if (hour >= 9 && hour < 14) sessionType = 'london';
-                    else if (hour >= 14 && hour < 17) sessionType = 'overlap'; // London/NY
-                    else if (hour >= 17 && hour < 22) sessionType = 'ny';
-                    
-                    if (sessionType) {
-                        // Finde Session-Start und Ende im Chart
-                        const sessionStart = new Date(c.t);
-                        sessionStart.setUTCMinutes(0, 0, 0);
-                        if (sessionType === 'asian') sessionStart.setUTCHours(0);
-                        else if (sessionType === 'london') sessionStart.setUTCHours(9);
-                        else if (sessionType === 'overlap') sessionStart.setUTCHours(14);
-                        else if (sessionType === 'ny') sessionStart.setUTCHours(17);
-                        
-                        const sessionEnd = new Date(sessionStart);
-                        sessionEnd.setUTCHours(sessionStart.getUTCHours() + (sessionType === 'overlap' ? 3 : 8));
-                        
-                        annotations['session' + aid++] = {
-                            type: 'box',
-                            xMin: sessionStart.getTime(),
-                            xMax: Math.min(sessionEnd.getTime(), candles[candles.length-1].t + 3600000),
-                            backgroundColor: sessionColors[sessionType],
-                            borderWidth: 0,
-                            label: {
-                                display: false
-                            }
-                        };
-                    }
-                }
-            });
-        }
-    }
-
-    // Order Blocks
     if (STATE.overlays.ob) {
         STATE.orderBlocks.slice(-4).forEach(ob => {
             annotations['ob' + aid++] = {
@@ -2466,7 +3214,6 @@ function buildAnnotations() {
         });
     }
 
-    // MSS/BOS
     if (STATE.overlays.mss) {
         [...STATE.mssEvents.slice(-6), ...STATE.bosEvents.slice(-6)].forEach(ev => {
             const isMSS = ev.type.startsWith('MSS');
@@ -2492,7 +3239,6 @@ function buildAnnotations() {
         });
     }
 
-    // Liquidity
     if (STATE.overlays.liq) {
         STATE.liquidityLevels.slice(0, 4).forEach(l => {
             annotations['liq' + aid++] = {
@@ -2519,6 +3265,8 @@ function buildAnnotations() {
 }
 
 function initChart() {
+    saveChartState();
+    
     if (STATE.chart) { STATE.chart.destroy(); STATE.chart = null; }
     const ctx = document.getElementById('mainChart').getContext('2d');
     const candles = STATE.tfData[STATE.currentTF];
@@ -2586,7 +3334,7 @@ function initChart() {
                     callbacks: {
                         title: function(context) {
                             const date = new Date(context[0].parsed.x);
-                            return date.toLocaleString('de-DE');
+                            return date.toLocaleString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US');
                         },
                         label: function(ctx) {
                             if (ctx.dataset.label === 'BTC' && STATE.chartType === 'candles' && ctx.raw && ctx.raw.o !== undefined) {
@@ -2625,12 +3373,16 @@ function initChart() {
         }
     });
     
+    restoreChartState();
+    
     document.getElementById('mainChart').addEventListener('dblclick', () => {
         if (STATE.chart) STATE.chart.resetZoom();
         if (STATE.volumeChart) STATE.volumeChart.resetZoom();
+        if (STATE.rsiChart) STATE.rsiChart.resetZoom();
     });
     setupChartInteraction();
     initVolumeChart();
+    if (STATE.overlays.rsi) initRSIChart();
 }
 
 function initVolumeChart() {
@@ -2645,7 +3397,7 @@ function initVolumeChart() {
         type: 'bar',
         data: {
             datasets: [{
-                label: 'Volumen',
+                label: 'Volume',
                 data: candles.map(c => ({
                     x: c.t,
                     y: c.v,
@@ -2676,11 +3428,11 @@ function initVolumeChart() {
                     callbacks: {
                         title: ctx => {
                             const date = new Date(ctx[0].parsed.x);
-                            return date.toLocaleString('de-DE');
+                            return date.toLocaleString(CURRENT_LANG === 'de' ? 'de-DE' : 'en-US');
                         },
                         label: ctx => {
                             const val = ctx.raw.y;
-                            return `Volumen: ${val >= 1000000 ? (val/1000000).toFixed(2) + 'M' : (val/1000).toFixed(1) + 'k'}`;
+                            return `Volume: ${val >= 1000000 ? (val/1000000).toFixed(2) + 'M' : (val/1000).toFixed(1) + 'k'}`;
                         }
                     }
                 },
@@ -2716,9 +3468,150 @@ function initVolumeChart() {
     });
 }
 
+function initRSIChart() {
+    if (STATE.rsiChart) { STATE.rsiChart.destroy(); STATE.rsiChart = null; }
+    
+    const container = document.getElementById('rsiContainer');
+    if (container) container.style.display = 'block';
+    
+    const ctx = document.getElementById('rsiChart').getContext('2d');
+    const candles = STATE.tfData[STATE.currentTF];
+    if (!candles || !candles.length || STATE.rsiData.length === 0) return;
+    
+    const timeUnit = getTimeUnit(STATE.currentTF);
+    
+    // Update RSI Panel
+    const lastRSI = STATE.rsiData[STATE.rsiData.length - 1];
+    const lastK = STATE.stochRsiData.k[STATE.stochRsiData.k.length - 1];
+    const lastD = STATE.stochRsiData.d[STATE.stochRsiData.d.length - 1];
+    
+    safeSetText('rsiValue', lastRSI ? lastRSI.toFixed(1) : '--', lastRSI > 70 ? 'var(--short)' : lastRSI < 30 ? 'var(--long)' : null);
+    safeSetText('stochKValue', lastK ? lastK.toFixed(1) : '--');
+    safeSetText('stochDValue', lastD ? lastD.toFixed(1) : '--');
+    
+    const divValueEl = document.getElementById('divergenceValue');
+    const divListEl = document.getElementById('divergenceList');
+    
+    if (divValueEl && divListEl) {
+        if (STATE.divergences.length > 0) {
+            const lastDiv = STATE.divergences[STATE.divergences.length - 1];
+            const isRecent = candles.length - lastDiv.endIndex < 10;
+            divValueEl.textContent = lastDiv.type.toUpperCase();
+            divValueEl.style.color = lastDiv.type === 'bullish' ? 'var(--long)' : 'var(--short)';
+            
+            if (isRecent) {
+                divListEl.innerHTML = `<span class="divergence-tag">${lastDiv.type} @ candle ${lastDiv.endIndex}</span>`;
+            } else {
+                divListEl.innerHTML = '';
+            }
+        } else {
+            divValueEl.textContent = '--';
+            divValueEl.style.color = 'var(--text-3)';
+            divListEl.innerHTML = '';
+        }
+    }
+    
+    STATE.rsiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'RSI',
+                    data: candles.map((c, i) => ({ x: c.t, y: STATE.rsiData[i] })).filter(d => d.y !== null),
+                    borderColor: '#00bcd4',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'StochRSI %K',
+                    data: candles.map((c, i) => ({ x: c.t, y: STATE.stochRsiData.k[i] })).filter(d => d.y !== null),
+                    borderColor: '#ff9800',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    borderDash: [3, 3],
+                    yAxisID: 'y',
+                    hidden: false
+                },
+                {
+                    label: 'StochRSI %D',
+                    data: candles.map((c, i) => ({ x: c.t, y: STATE.stochRsiData.d[i] })).filter(d => d.y !== null),
+                    borderColor: '#e91e63',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    borderDash: [2, 2],
+                    yAxisID: 'y',
+                    hidden: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { 
+                    display: true,
+                    labels: { color: '#a0a8b8', font: { size: 8 }, boxWidth: 8 }
+                },
+                annotation: {
+                    annotations: {
+                        overbought: {
+                            type: 'line',
+                            yMin: 70,
+                            yMax: 70,
+                            borderColor: 'rgba(255,23,68,0.3)',
+                            borderWidth: 1,
+                            borderDash: [4, 4]
+                        },
+                        oversold: {
+                            type: 'line',
+                            yMin: 30,
+                            yMax: 30,
+                            borderColor: 'rgba(0,230,118,0.3)',
+                            borderWidth: 1,
+                            borderDash: [4, 4]
+                        }
+                    }
+                },
+                zoom: {
+                    pan: { enabled: false },
+                    zoom: {
+                        wheel: { enabled: false }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit },
+                    grid: { display: false, drawBorder: false },
+                    ticks: { display: false },
+                    min: STATE.chart ? STATE.chart.scales.x.min : undefined,
+                    max: STATE.chart ? STATE.chart.scales.x.max : undefined
+                },
+                y: {
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    grid: { color: 'rgba(30,37,48,0.2)', drawBorder: false },
+                    ticks: { 
+                        color: '#444e5f', 
+                        font: { size: 8 },
+                        maxTicksLimit: 3,
+                        callback: v => v.toFixed(0)
+                    }
+                }
+            }
+        }
+    });
+}
+
 function setupChartInteraction() {
     const canvas = document.getElementById('mainChart');
-    if (canvas._tvInteractionActive) return;
+    if (!canvas || canvas._tvInteractionActive) return;
     canvas._tvInteractionActive = true;
 
     let isDragging = false, dragMode = null;
@@ -2752,6 +3645,7 @@ function setupChartInteraction() {
         if (!isDragging || !STATE.chart) return;
         const dx = e.clientX - startX, dy = e.clientY - startY;
         const ca = getChartArea();
+        if (!ca) return;
         const { x: xScale, y: yScale } = getScales();
         const xRange = startXMax - startXMin, yRange = startYMax - startYMin;
         const pxW = ca.right - ca.left, pxH = ca.bottom - ca.top;
@@ -2844,6 +3738,13 @@ function updateChart() {
         }));
         STATE.volumeChart.update('none');
     }
+    
+    if (STATE.rsiChart && STATE.overlays.rsi) {
+        STATE.rsiChart.data.datasets[0].data = candles.map((c, i) => ({ x: c.t, y: STATE.rsiData[i] })).filter(d => d.y !== null);
+        STATE.rsiChart.data.datasets[1].data = candles.map((c, i) => ({ x: c.t, y: STATE.stochRsiData.k[i] })).filter(d => d.y !== null);
+        STATE.rsiChart.data.datasets[2].data = candles.map((c, i) => ({ x: c.t, y: STATE.stochRsiData.d[i] })).filter(d => d.y !== null);
+        STATE.rsiChart.update('none');
+    }
 }
 
 // ============================================================
@@ -2852,28 +3753,24 @@ function updateChart() {
 function updateSessionStats() {
     const all = STATE.signalHistory;
     const closed = all.filter(s => ['tp1','tp2','sl'].includes(s.status));
-    const total = all.length;
-
-    document.getElementById('btWinRate').textContent = total;
-    document.getElementById('btWinRate').style.color = total > 0 ? 'var(--text-0)' : 'var(--text-2)';
+    
+    const riskyCount = all.filter(s => s.category === 'risky').length;
+    const neutralCount = all.filter(s => s.category === 'neutral').length;
+    const safeCount = all.filter(s => s.category === 'safe').length;
+    
+    safeSetText('statRisky', riskyCount);
+    safeSetText('statNeutral', neutralCount);
+    safeSetText('statSafe', safeCount);
 
     if (!closed.length) {
-        document.getElementById('btPF').textContent = '--';
-        document.getElementById('btRR').textContent = '--';
-        document.getElementById('btDD').textContent = '--';
+        safeSetText('statWinRate', '--');
+        safeSetText('statTotalR', '--');
         return;
     }
 
     const wins = closed.filter(s => s.status === 'tp1' || s.status === 'tp2');
     const wr = (wins.length / closed.length * 100).toFixed(0);
-    document.getElementById('btPF').textContent = wr + '%';
-    document.getElementById('btPF').style.color = wr >= 60 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)';
-
-    const avgRWin = wins.length > 0
-        ? (wins.reduce((a,s) => a + (s.status === 'tp2' ? 3.5 : 2), 0) / wins.length).toFixed(1)
-        : '0';
-    document.getElementById('btRR').textContent = avgRWin + 'R';
-    document.getElementById('btRR').style.color = parseFloat(avgRWin) >= 2 ? 'var(--long)' : 'var(--warn)';
+    safeSetText('statWinRate', wr + '%', wr >= 60 ? 'var(--long)' : wr >= 45 ? 'var(--warn)' : 'var(--short)');
 
     const totalR = closed.reduce((a,s) => {
         if (s.status === 'tp2') return a + 3.5;
@@ -2881,8 +3778,15 @@ function updateSessionStats() {
         return a - 1;
     }, 0);
     const totalRStr = (totalR >= 0 ? '+' : '') + totalR.toFixed(1) + 'R';
-    document.getElementById('btDD').textContent = totalRStr;
-    document.getElementById('btDD').style.color = totalR >= 0 ? 'var(--long)' : 'var(--short)';
+    safeSetText('statTotalR', totalRStr, totalR >= 0 ? 'var(--long)' : 'var(--short)');
+}
+
+function updateAllUI() {
+    renderMTFBias();
+    renderFVGList();
+    renderLiquidity();
+    renderSignalHistory();
+    updateSessionStats();
 }
 
 // ============================================================
@@ -2895,8 +3799,11 @@ function connectWS() {
     let lastCU = 0, lastA = 0, tc = 0;
 
     ws.onopen = () => {
-        document.getElementById('wsStatus').style.background = 'var(--long)';
-        document.getElementById('wsStatus').style.boxShadow = '0 0 8px var(--long-glow)';
+        const wsStatus = document.getElementById('wsStatus');
+        if (wsStatus) {
+            wsStatus.style.background = 'var(--long)';
+            wsStatus.style.boxShadow = '0 0 8px var(--long-glow)';
+        }
         if (STATE.wsReconnectTimer) { clearTimeout(STATE.wsReconnectTimer); STATE.wsReconnectTimer = null; }
     };
 
@@ -2904,12 +3811,14 @@ function connectWS() {
         const d = JSON.parse(e.data);
         STATE.price = parseFloat(d.p);
         tc++;
-        document.getElementById('livePrice').textContent = '$' + STATE.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        safeSetText('livePrice', '$' + STATE.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }));
         if (STATE.openPrice24h > 0) {
             const ch = ((STATE.price / STATE.openPrice24h - 1) * 100);
             const el = document.getElementById('priceChange');
-            el.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%';
-            el.className = ch >= 0 ? 'price-change price-up' : 'price-change price-down';
+            if (el) {
+                el.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%';
+                el.className = ch >= 0 ? 'price-change price-up' : 'price-change price-down';
+            }
         }
         const tf = STATE.currentTF;
         if (STATE.tfData[tf] && STATE.tfData[tf].length) {
@@ -2925,14 +3834,29 @@ function connectWS() {
         updateCooldownBar();
     };
 
-    ws.onerror = () => { document.getElementById('wsStatus').style.background = 'var(--short)'; document.getElementById('wsStatus').style.boxShadow = '0 0 8px var(--short-glow)'; };
-    ws.onclose = () => { document.getElementById('wsStatus').style.background = 'var(--warn)'; document.getElementById('wsStatus').style.boxShadow = '0 0 8px rgba(255,193,7,0.4)'; STATE.wsReconnectTimer = setTimeout(connectWS, 3000); };
+    ws.onerror = () => { 
+        const wsStatus = document.getElementById('wsStatus');
+        if (wsStatus) {
+            wsStatus.style.background = 'var(--short)'; 
+            wsStatus.style.boxShadow = '0 0 8px var(--short-glow)'; 
+        }
+    };
+    
+    ws.onclose = () => { 
+        const wsStatus = document.getElementById('wsStatus');
+        if (wsStatus) {
+            wsStatus.style.background = 'var(--warn)'; 
+            wsStatus.style.boxShadow = '0 0 8px rgba(255,193,7,0.4)'; 
+        }
+        STATE.wsReconnectTimer = setTimeout(connectWS, 3000); 
+    };
 }
 
 function runAnalysis() {
     const candles = STATE.tfData[STATE.currentTF];
     if (!candles || candles.length < 50) return;
     
+    updateRSIData();
     detectFVGs(candles); 
     detectOrderBlocks(candles);
     detectSwingPoints(candles); 
@@ -2964,7 +3888,8 @@ document.querySelectorAll('.tf-btn').forEach(btn => {
             if (data) STATE.tfData[STATE.currentTF] = data;
             btn.style.opacity = '1';
         }
-
+        
+        updateRSIData();
         initChart();
         runAnalysis();
     });
@@ -2978,7 +3903,23 @@ document.querySelectorAll('.toggle-chip').forEach(chip => {
         const key = chip.dataset.overlay;
         STATE.overlays[key] = !STATE.overlays[key];
         chip.classList.toggle('on', STATE.overlays[key]);
-        initChart();
+        
+        if (key === 'rsi') {
+            const container = document.getElementById('rsiContainer');
+            if (STATE.overlays.rsi) {
+                if (container) container.style.display = 'block';
+                initRSIChart();
+            } else {
+                if (container) container.style.display = 'none';
+                if (STATE.rsiChart) {
+                    STATE.rsiChart.destroy();
+                    STATE.rsiChart = null;
+                }
+            }
+            syncCharts(STATE.chart);
+        } else {
+            initChart();
+        }
     });
 });
 
@@ -2991,6 +3932,7 @@ async function refreshData() {
         const data = await fetchCandles(tf, 500);
         if (data) STATE.tfData[tf] = data;
     }
+    updateRSIData();
     runAnalysis();
     updateSessionStats();
 }
@@ -2998,30 +3940,45 @@ async function refreshData() {
 async function init() {
     const ld = document.getElementById('loadingStatus');
     try {
-        ld.textContent = 'Lade Multi-Timeframe Daten...';
-        await loadAllTimeframes();
-        ld.textContent = 'Lade Funding Daten...';
-        await fetchFundingData();
-        ld.textContent = 'Analysiere Marktstruktur...';
-        runAnalysis();
-        ld.textContent = 'Initialisiere Charts...';
-        initChart();
-        ld.textContent = 'Lade Session Stats...';
-        updateSessionStats();
-        ld.textContent = 'Verbinde Live-Feed...';
-        connectWS();
-        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-        setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 800);
+        setLanguage(CURRENT_LANG);
         
-        // Periodic Refresh
+        if (ld) ld.textContent = t('loading_market');
+        await loadAllTimeframes();
+        
+        if (ld) ld.textContent = 'Loading funding data...';
+        await fetchFundingData();
+        
+        if (ld) ld.textContent = 'Analyzing market structure...';
+        initPanels();
+        runAnalysis();
+        
+        if (ld) ld.textContent = 'Initializing charts...';
+        initChart();
+        
+        if (ld) ld.textContent = 'Loading session stats...';
+        updateSessionStats();
+        
+        if (ld) ld.textContent = 'Connecting live feed...';
+        connectWS();
+        
+        if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+        
+        setTimeout(() => {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.classList.add('hidden');
+        }, 800);
+        
         setInterval(refreshData, 5 * 60 * 1000);
-        setInterval(fetchFundingData, 60 * 1000); // Funding jede Minute aktualisieren
+        setInterval(fetchFundingData, 60 * 1000);
         setInterval(() => {
             detectSession();
-            updateFundingUI(); // Countdown aktualisieren
-        }, 1000); // Jede Sekunde für Countdown und Session-Check
+            updateFundingUI();
+        }, 1000);
         
-    } catch (err) { ld.textContent = 'Fehler: ' + err.message; console.error(err); }
+    } catch (err) { 
+        if (ld) ld.textContent = 'Error: ' + err.message; 
+        console.error(err); 
+    }
 }
 
 window.addEventListener('load', init);
